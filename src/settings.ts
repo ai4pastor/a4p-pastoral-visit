@@ -9,7 +9,8 @@ import {
 } from "./constants";
 import { nfc } from "./utils";
 import { copyGitignoreSuggestion, runPrivacyCheck } from "./privacy-check";
-import { FolderSuggest } from "./folder-suggest";
+import { FileSuggest, FolderSuggest } from "./folder-suggest";
+import { WordValues, parseWordValues } from "./word-config";
 
 export interface PastoralVisitSettings {
   /** 성도 노트 폴더 (교인노트 스캔 대상) */
@@ -28,6 +29,12 @@ export interface PastoralVisitSettings {
   visitTypes: string[];
   /** 일지 생성 시 world/route 분류 자동 삽입 */
   insertWordClassification: boolean;
+  /** WORD 분류법 템플릿/체계 노트 경로 (분석 대상) */
+  wordTemplatePath: string;
+  /** 노트 생성 시 넣을 world 값 (예: "[[📩 208 상담 & 목양]]") */
+  wordWorldValue: string;
+  /** 노트 생성 시 넣을 route 값 (예: "[[📝기록]]") */
+  wordRouteValue: string;
   /** 기록 최소화 온보딩 Notice 표시 여부 */
   onboardingShown: boolean;
   /** 주간 기도제목 모음 저장 폴더 */
@@ -49,6 +56,9 @@ export const DEFAULT_SETTINGS: PastoralVisitSettings = {
   maskSensitiveFields: true,
   visitTypes: ["정기심방", "특별심방", "위로심방"],
   insertWordClassification: true,
+  wordTemplatePath: "900. Settings/901. Templates/Template-WORD-분류법.md",
+  wordWorldValue: "[[📩 208 상담 & 목양]]",
+  wordRouteValue: "[[📝기록]]",
   onboardingShown: false,
   prayerDigestFolder: "400. Education & Ministry/460. 성도/기도모음",
   prayerDigestWeeks: 4,
@@ -58,6 +68,9 @@ export const DEFAULT_SETTINGS: PastoralVisitSettings = {
 
 export class PastoralVisitSettingTab extends PluginSettingTab {
   plugin: PastoralVisitPlugin;
+  private wordParsed: WordValues | null = null;
+  private wordStatusEl!: HTMLElement;
+  private wordChoicesEl!: HTMLElement;
 
   constructor(app: App, plugin: PastoralVisitPlugin) {
     super(app, plugin);
@@ -195,7 +208,10 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
 
     this.renderPrivacyCheck(containerEl);
 
-    // ── ④ 분석 헤딩 ──
+    // ── ④ WORD 분류 ──
+    this.renderWordSettings(containerEl);
+
+    // ── ⑤ 분석 헤딩 ──
     this.renderHeadingSettings(containerEl);
 
     // ── ⑤ 고급 ──
@@ -230,11 +246,18 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  /**
+   * WORD 분류 설정 — 분류법 템플릿을 분석해 world/route 유효 값을 추출하고 선택.
+   * 수강생마다 번호·순서가 다르므로 하드코딩하지 않고 각자의 템플릿에서 읽는다.
+   */
+  private renderWordSettings(containerEl: HTMLElement): void {
+    new Setting(containerEl).setName("WORD 분류").setHeading();
+
     new Setting(containerEl)
       .setName("WORD 분류 자동 삽입")
-      .setDesc(
-        "노트 생성 시 world/route 프론트매터(📩 208 상담 & 목양 / 📝기록)를 자동으로 넣습니다. WORD 분류 체계를 쓰지 않는 볼트라면 끄세요.",
-      )
+      .setDesc("노트 생성 시 world/route 프론트매터를 자동으로 넣습니다. WORD 분류 체계를 쓰지 않는 볼트라면 끄세요.")
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.insertWordClassification)
@@ -243,6 +266,104 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
             await this.plugin.persist();
           }),
       );
+
+    new Setting(containerEl)
+      .setName("WORD 분류법 템플릿 경로")
+      .setDesc(
+        "본인 볼트의 WORD 분류법 템플릿(또는 분류 체계 노트) 경로입니다. 클릭하면 파일 목록이 뜹니다. '분석'을 누르면 이 노트에서 world(📩)·route(📝) 유효 값을 읽어 아래 선택지로 제공합니다 — 분류법에 정의된 값만 사용하기 위함입니다.",
+      )
+      .addText((text) => {
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.wordTemplatePath)
+          .setValue(this.plugin.settings.wordTemplatePath)
+          .onChange(async (value) => {
+            this.plugin.settings.wordTemplatePath = value.trim();
+            await this.plugin.persist();
+          });
+        new FileSuggest(this.app, text.inputEl);
+      })
+      .addButton((btn) =>
+        btn
+          .setButtonText("분석")
+          .setCta()
+          .onClick(() => void this.analyzeWordTemplate()),
+      );
+
+    this.wordStatusEl = containerEl.createDiv({ cls: "a4p-pv-settings-status" });
+    this.wordChoicesEl = containerEl.createDiv();
+    this.renderWordChoices();
+  }
+
+  /** 템플릿 분석 → 선택지 갱신 */
+  private async analyzeWordTemplate(): Promise<void> {
+    this.wordStatusEl.empty();
+    const path = this.plugin.settings.wordTemplatePath;
+    const file = this.app.vault.getFileByPath(path);
+    if (!file) {
+      this.wordStatusEl.createEl("p", {
+        text: `✗ 노트를 찾을 수 없습니다 — ${path || "(비어 있음)"}`,
+        cls: "a4p-pv-settings-status-line",
+      });
+      return;
+    }
+    const content = await this.app.vault.cachedRead(file);
+    this.wordParsed = parseWordValues(content);
+
+    const lines = [
+      `✓ 분석 완료: world ${this.wordParsed.world.length}개 · route ${this.wordParsed.route.length}개 발견`,
+    ];
+    if (this.wordParsed.world.length === 0) {
+      lines.push("⚠ world 값(📩)을 찾지 못했습니다. 분류법 노트가 맞는지 확인하세요.");
+    }
+    if (this.wordParsed.route.length === 0) {
+      lines.push("⚠ route 값(📝)을 찾지 못했습니다. 현재 값을 그대로 사용합니다.");
+    }
+    for (const line of lines) {
+      this.wordStatusEl.createEl("p", { text: line, cls: "a4p-pv-settings-status-line" });
+    }
+    this.renderWordChoices();
+  }
+
+  /** world/route 선택 드롭다운 — 분석 결과 + 현재 값 병합 */
+  private renderWordChoices(): void {
+    const el = this.wordChoicesEl;
+    el.empty();
+
+    const worldOptions = this.mergeOptions(
+      this.wordParsed?.world ?? [],
+      this.plugin.settings.wordWorldValue,
+    );
+    const routeOptions = this.mergeOptions(
+      this.wordParsed?.route ?? [],
+      this.plugin.settings.wordRouteValue,
+    );
+
+    new Setting(el)
+      .setName("world 값")
+      .setDesc("심방 노트에 들어갈 world 분류입니다. 분석 후 목록에서 고르세요.")
+      .addDropdown((drop) => {
+        for (const opt of worldOptions) drop.addOption(opt, opt.replace(/^\[\[|\]\]$/g, ""));
+        drop.setValue(this.plugin.settings.wordWorldValue).onChange(async (value) => {
+          this.plugin.settings.wordWorldValue = value;
+          await this.plugin.persist();
+        });
+      });
+
+    new Setting(el)
+      .setName("route 값")
+      .setDesc("보통 기록 단계(📝기록)를 사용합니다.")
+      .addDropdown((drop) => {
+        for (const opt of routeOptions) drop.addOption(opt, opt.replace(/^\[\[|\]\]$/g, ""));
+        drop.setValue(this.plugin.settings.wordRouteValue).onChange(async (value) => {
+          this.plugin.settings.wordRouteValue = value;
+          await this.plugin.persist();
+        });
+      });
+  }
+
+  /** 분석된 선택지에 현재 저장값을 포함시켜 선택 상태가 유지되게 */
+  private mergeOptions(parsed: string[], current: string): string[] {
+    return parsed.includes(current) ? parsed : [current, ...parsed];
   }
 
   /** 분석 헤딩 커스터마이즈 + 검증 */

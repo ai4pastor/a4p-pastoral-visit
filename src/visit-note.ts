@@ -33,6 +33,8 @@ export async function createVisitNote(
   const content = buildVisitContent(input, memberFm, {
     insertWordClassification: plugin.settings.insertWordClassification,
     headings: plugin.settings.headings,
+    worldValue: plugin.settings.wordWorldValue,
+    routeValue: plugin.settings.wordRouteValue,
   });
 
   let file: TFile;

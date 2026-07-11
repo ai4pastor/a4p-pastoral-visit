@@ -1,6 +1,5 @@
 import { Notice, TFile, normalizePath } from "obsidian";
 import type PastoralVisitPlugin from "./main";
-import { WORD_CLASSIFICATION } from "./constants";
 import { ensureFolder } from "./member-note";
 import { DigestEntry, buildPrayerDigest } from "./prayers-core";
 import { PrayerItem } from "./types";
@@ -73,8 +72,8 @@ export async function planPrayerDigest(
     rangeLabel,
     includeAnswered: params.includeAnswered,
     insertWordClassification: plugin.settings.insertWordClassification,
-    worldValue: WORD_CLASSIFICATION.world,
-    routeValue: WORD_CLASSIFICATION.route,
+    worldValue: plugin.settings.wordWorldValue,
+    routeValue: plugin.settings.wordRouteValue,
   });
 
   return {

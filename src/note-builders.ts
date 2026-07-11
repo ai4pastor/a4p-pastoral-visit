@@ -19,16 +19,16 @@ export function suggestAltName(name: string, 구역: string): string {
 /** 성도 노트 콘텐츠 조립 */
 export function buildMemberContent(
   input: NewMemberInput,
-  opts: { insertWordClassification: boolean; today: string; headings?: HeadingConfig },
+  opts: { insertWordClassification: boolean; today: string; headings?: HeadingConfig; worldValue?: string; routeValue?: string },
 ): string {
   const h = opts.headings ?? DEFAULT_HEADINGS;
   const fm: string[] = ["---"];
   fm.push(`created: ${opts.today}`);
   if (opts.insertWordClassification) {
     fm.push(`world:`);
-    fm.push(`  - ${yamlString(WORD_CLASSIFICATION.world)}`);
+    fm.push(`  - ${yamlString(opts.worldValue ?? WORD_CLASSIFICATION.world)}`);
     fm.push(`route:`);
-    fm.push(`  - ${yamlString(WORD_CLASSIFICATION.route)}`);
+    fm.push(`  - ${yamlString(opts.routeValue ?? WORD_CLASSIFICATION.route)}`);
   }
   fm.push(`type: 교인노트`);
   fm.push(`이름: ${yamlString(input.이름)}`);
@@ -77,7 +77,7 @@ export function buildVisitFileName(dateStr: string, memberName: string): string 
 export function buildVisitContent(
   input: NewVisitInput,
   memberFm: MemberFrontmatter,
-  opts: { insertWordClassification: boolean; headings?: HeadingConfig },
+  opts: { insertWordClassification: boolean; headings?: HeadingConfig; worldValue?: string; routeValue?: string },
 ): string {
   const h = opts.headings ?? DEFAULT_HEADINGS;
   const fm: string[] = ["---"];
@@ -93,9 +93,9 @@ export function buildVisitContent(
   fm.push(`  - 심방일지`);
   if (opts.insertWordClassification) {
     fm.push(`world:`);
-    fm.push(`  - ${yamlString(WORD_CLASSIFICATION.world)}`);
+    fm.push(`  - ${yamlString(opts.worldValue ?? WORD_CLASSIFICATION.world)}`);
     fm.push(`route:`);
-    fm.push(`  - ${yamlString(WORD_CLASSIFICATION.route)}`);
+    fm.push(`  - ${yamlString(opts.routeValue ?? WORD_CLASSIFICATION.route)}`);
   }
   fm.push(`created_via: a4p-pastoral-visit`);
   fm.push("---");

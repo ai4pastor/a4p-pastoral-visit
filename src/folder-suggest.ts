@@ -1,4 +1,4 @@
-import { AbstractInputSuggest, App, TFolder } from "obsidian";
+import { AbstractInputSuggest, App, TFile, TFolder } from "obsidian";
 
 /**
  * 설정 텍스트 입력용 폴더 경로 자동완성 (a4p-sermon-desk 패턴).
@@ -50,5 +50,40 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
     this.inputEl.dispatchEvent(new Event("input", { bubbles: true }));
     this.close();
     this.onSelectFolder?.(folder);
+  }
+}
+
+/** 설정 텍스트 입력용 마크다운 파일 경로 자동완성 */
+export class FileSuggest extends AbstractInputSuggest<TFile> {
+  constructor(
+    app: App,
+    private inputEl: HTMLInputElement,
+    private onSelectFile?: (file: TFile) => void,
+  ) {
+    super(app, inputEl);
+    inputEl.addEventListener("focus", () => {
+      inputEl.dispatchEvent(new Event("input"));
+    });
+  }
+
+  getSuggestions(query: string): TFile[] {
+    const lowerQuery = query.toLowerCase();
+    const files = this.app.vault.getMarkdownFiles();
+    const filtered = lowerQuery
+      ? files.filter((f) => f.path.toLowerCase().includes(lowerQuery))
+      : files;
+    filtered.sort((a, b) => a.path.localeCompare(b.path));
+    return filtered.slice(0, 100);
+  }
+
+  renderSuggestion(file: TFile, el: HTMLElement): void {
+    el.setText(file.path);
+  }
+
+  selectSuggestion(file: TFile): void {
+    this.inputEl.value = file.path;
+    this.inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+    this.close();
+    this.onSelectFile?.(file);
   }
 }

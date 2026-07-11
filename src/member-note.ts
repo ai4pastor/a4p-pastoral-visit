@@ -43,6 +43,8 @@ export async function createMemberNote(
     insertWordClassification: plugin.settings.insertWordClassification,
     today: todayStr,
     headings: plugin.settings.headings,
+    worldValue: plugin.settings.wordWorldValue,
+    routeValue: plugin.settings.wordRouteValue,
   });
 
   let file: TFile;
