@@ -63,6 +63,24 @@ export interface ActionItem {
   daysElapsed: number;
 }
 
+/** 기도제목 항목 */
+export interface PrayerItem {
+  visitPath: string;
+  visitBasename: string;
+  memberName: string;
+  visitDate: string;
+  /** 0-기반 라인 번호 */
+  line: number;
+  /** 라인 원문 (토글 시 일치 검증용) */
+  raw: string;
+  text: string;
+  /** 그룹 라벨 (본인 기도제목 / 가족 기도제목 등) */
+  group: string;
+  /** 응답됨 또는 더 이상 기도 불필요 표시 */
+  answered: boolean;
+  answeredDate: string | null;
+}
+
 /** 새 성도 등록 모달 입력값 */
 export interface NewMemberInput {
   이름: string;

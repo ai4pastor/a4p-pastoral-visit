@@ -6,6 +6,7 @@ import { VisitModal } from "./modals/visit-modal";
 import { NOTE_TYPE } from "./constants";
 import { openSyncFlow } from "./sync";
 import { ActionScanner } from "./actions";
+import { PrayerScanner } from "./prayers";
 import { PastoralVisitView, VIEW_TYPE_PASTORAL_VISIT } from "./view";
 import { SyncBanner } from "./sync-banner";
 import { HeadingWatcher } from "./heading-watch";
@@ -19,6 +20,7 @@ export default class PastoralVisitPlugin extends Plugin {
   settings!: PastoralVisitSettings;
   index!: MemberIndex;
   actions!: ActionScanner;
+  prayers!: PrayerScanner;
   banner!: SyncBanner;
   private statusBarEl: HTMLElement | null = null;
 
@@ -29,6 +31,8 @@ export default class PastoralVisitPlugin extends Plugin {
     this.index.start();
     this.actions = new ActionScanner(this);
     this.actions.start();
+    this.prayers = new PrayerScanner(this);
+    this.prayers.start();
     this.banner = new SyncBanner(this);
     this.banner.start();
     new HeadingWatcher(this).start();

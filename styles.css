@@ -191,6 +191,23 @@
   min-width: 260px;
 }
 
+.a4p-pv-prayer-row {
+  align-items: flex-start;
+}
+
+.a4p-pv-prayer-row input[type="checkbox"] {
+  margin-top: 2px;
+}
+
+.a4p-pv-prayer-row .a4p-pv-row-main {
+  white-space: normal;
+}
+
+.a4p-pv-prayer-row .a4p-pv-row-main.is-answered {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
 /* ── 설정 ── */
 .a4p-pv-settings-status {
   margin: 8px 0 16px;

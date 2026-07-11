@@ -1,7 +1,7 @@
 import { ItemView, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type PastoralVisitPlugin from "./main";
 import { VISIT_STATUS } from "./constants";
-import { MemberEntry, ActionItem } from "./types";
+import { MemberEntry, ActionItem, PrayerItem } from "./types";
 import { VisitModal } from "./modals/visit-modal";
 import { openSyncFlow } from "./sync";
 import { maskBirth } from "./mask";
@@ -11,7 +11,7 @@ export const VIEW_TYPE_PASTORAL_VISIT = "a4p-pastoral-visit-panel";
 
 const DEBOUNCE_MS = 150;
 
-type Tab = "dashboard" | "actions";
+type Tab = "dashboard" | "actions" | "prayers";
 
 export class PastoralVisitView extends ItemView {
   private plugin: PastoralVisitPlugin;
@@ -22,6 +22,8 @@ export class PastoralVisitView extends ItemView {
   private unsubscribe: (() => void) | null = null;
   /** 후속조치 탭 필터 */
   private actionFilter: "all" | "old" = "all";
+  /** 기도 탭 필터 */
+  private prayerFilter: "active" | "answered" | "all" = "active";
 
   constructor(leaf: WorkspaceLeaf, plugin: PastoralVisitPlugin) {
     super(leaf);
@@ -71,6 +73,7 @@ export class PastoralVisitView extends ItemView {
     const tabs: Array<{ id: Tab; label: string }> = [
       { id: "dashboard", label: "🏠 대시보드" },
       { id: "actions", label: "✅ 후속조치" },
+      { id: "prayers", label: "🙏 기도" },
     ];
     for (const t of tabs) {
       const btn = this.tabsEl.createEl("button", {
@@ -88,7 +91,8 @@ export class PastoralVisitView extends ItemView {
   private async render(): Promise<void> {
     this.bodyEl.empty();
     if (this.tab === "dashboard") await this.renderDashboard();
-    else await this.renderActions();
+    else if (this.tab === "actions") await this.renderActions();
+    else await this.renderPrayers();
   }
 
   // ── 대시보드 ──
@@ -207,7 +211,28 @@ export class PastoralVisitView extends ItemView {
       }
     }
 
-    // 7. 최근 심방 (접힘)
+    // 7. 진행 중인 기도제목 (상위 3 + 더보기)
+    const prayers = await this.plugin.prayers.scanAll();
+    const activePrayers = prayers.filter((p) => !p.answered);
+    const prayerCard = this.card(body, `🙏 진행 중인 기도제목 (${activePrayers.length})`);
+    if (activePrayers.length === 0) {
+      prayerCard.createEl("p", { text: "수집된 기도제목이 없습니다.", cls: "a4p-pv-empty" });
+    } else {
+      for (const item of activePrayers.slice(0, 3)) this.renderPrayerRow(prayerCard, item, false);
+      if (activePrayers.length > 3) {
+        const more = prayerCard.createEl("button", {
+          text: `더보기 (${activePrayers.length - 3})`,
+          cls: "a4p-pv-more",
+        });
+        more.addEventListener("click", () => {
+          this.tab = "prayers";
+          this.renderTabs();
+          void this.render();
+        });
+      }
+    }
+
+    // 8. 최근 심방 (접힘)
     const recent = this.plugin.index
       .visitsList()
       .sort((a, b) => String(b.fm.날짜 ?? "").localeCompare(String(a.fm.날짜 ?? "")))
@@ -263,6 +288,83 @@ export class PastoralVisitView extends ItemView {
 
     const list = body.createDiv({ cls: "a4p-pv-action-list" });
     for (const item of pending) this.renderActionRow(list, item, true);
+  }
+
+  // ── 기도 탭 ──
+
+  private async renderPrayers(): Promise<void> {
+    const body = this.bodyEl;
+    const chips = body.createDiv({ cls: "a4p-pv-chips" });
+    const chipDefs: Array<{ id: "active" | "answered" | "all"; label: string }> = [
+      { id: "active", label: "진행 중" },
+      { id: "answered", label: "응답·마침 ✅" },
+      { id: "all", label: "전체" },
+    ];
+    for (const c of chipDefs) {
+      const chip = chips.createEl("button", {
+        text: c.label,
+        cls: `a4p-pv-chip${this.prayerFilter === c.id ? " is-active" : ""}`,
+      });
+      chip.addEventListener("click", () => {
+        this.prayerFilter = c.id;
+        void this.render();
+      });
+    }
+
+    let prayers = await this.plugin.prayers.scanAll();
+    if (this.prayerFilter === "active") prayers = prayers.filter((p) => !p.answered);
+    else if (this.prayerFilter === "answered") prayers = prayers.filter((p) => p.answered);
+
+    if (prayers.length === 0) {
+      body.createEl("p", {
+        text:
+          this.prayerFilter === "answered"
+            ? "응답 표시된 기도제목이 없습니다."
+            : "수집된 기도제목이 없습니다. 심방일지의 기도제목 섹션에 불릿으로 기록하면 여기에 모입니다.",
+        cls: "a4p-pv-empty",
+      });
+      return;
+    }
+
+    // 성도별 그룹핑
+    const byMember = new Map<string, PrayerItem[]>();
+    for (const p of prayers) {
+      const key = p.memberName || "(성도 미상)";
+      if (!byMember.has(key)) byMember.set(key, []);
+      byMember.get(key)!.push(p);
+    }
+
+    for (const [memberName, items] of byMember) {
+      const card = this.card(body, `${memberName} (${items.length})`);
+      for (const item of items) this.renderPrayerRow(card, item, true);
+    }
+  }
+
+  private renderPrayerRow(parent: HTMLElement, item: PrayerItem, detailed: boolean): void {
+    const row = parent.createDiv({ cls: "a4p-pv-row a4p-pv-prayer-row" });
+
+    const checkbox = row.createEl("input", { type: "checkbox" });
+    checkbox.checked = item.answered;
+    checkbox.title = item.answered
+      ? "응답 표시 해제 (일지의 ✅ 마커 제거)"
+      : "응답됨/기도 마침으로 표시 (일지 라인 끝에 ✅ 날짜 기록)";
+    checkbox.addEventListener("click", (e) => {
+      e.stopPropagation();
+      void this.plugin.prayers.toggle(item).then(() => this.scheduleRender());
+    });
+
+    const main = row.createSpan({ cls: "a4p-pv-row-main" });
+    main.setText(item.text);
+    if (item.answered) main.addClass("is-answered");
+
+    const metaParts: string[] = [];
+    if (!detailed && item.memberName) metaParts.push(item.memberName);
+    if (item.group) metaParts.push(item.group);
+    metaParts.push(item.visitDate);
+    if (item.answered && item.answeredDate) metaParts.push(`✅ ${item.answeredDate}`);
+    row.createSpan({ text: metaParts.filter(Boolean).join(" · "), cls: "a4p-pv-row-meta" });
+
+    main.addEventListener("click", () => void this.openPath(item.visitPath, item.line));
   }
 
   // ── 공용 렌더러 ──
