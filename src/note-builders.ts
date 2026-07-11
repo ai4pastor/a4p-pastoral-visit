@@ -2,7 +2,12 @@
  * 노트 콘텐츠 조립 — obsidian 비의존 순수 함수 (vitest 직접 테스트 대상).
  * 파일 IO는 member-note.ts / visit-note.ts 가 담당한다.
  */
-import { MEMBER_SECTIONS, VISIT_SECTIONS, VISIT_STATUS, WORD_CLASSIFICATION } from "./constants";
+import {
+  DEFAULT_HEADINGS,
+  HeadingConfig,
+  VISIT_STATUS,
+  WORD_CLASSIFICATION,
+} from "./constants";
 import { MemberFrontmatter, NewMemberInput, NewVisitInput } from "./types";
 import { formatYymmdd, nfc, yamlString } from "./utils";
 
@@ -14,8 +19,9 @@ export function suggestAltName(name: string, 구역: string): string {
 /** 성도 노트 콘텐츠 조립 */
 export function buildMemberContent(
   input: NewMemberInput,
-  opts: { insertWordClassification: boolean; today: string },
+  opts: { insertWordClassification: boolean; today: string; headings?: HeadingConfig },
 ): string {
+  const h = opts.headings ?? DEFAULT_HEADINGS;
   const fm: string[] = ["---"];
   fm.push(`created: ${opts.today}`);
   if (opts.insertWordClassification) {
@@ -44,11 +50,11 @@ export function buildMemberContent(
   const body: string[] = [];
   body.push(`# ${input.이름}`);
   body.push("");
-  body.push(MEMBER_SECTIONS.visitLog);
+  body.push(h.memberVisitLog);
   body.push("");
   body.push("(심방 기록이 추가되면 여기에 링크됩니다)");
   body.push("");
-  body.push(MEMBER_SECTIONS.embeds);
+  body.push(h.memberEmbeds);
   body.push("");
   body.push("(임베드가 여기에 추가됩니다)");
   body.push("");
@@ -71,8 +77,9 @@ export function buildVisitFileName(dateStr: string, memberName: string): string 
 export function buildVisitContent(
   input: NewVisitInput,
   memberFm: MemberFrontmatter,
-  opts: { insertWordClassification: boolean },
+  opts: { insertWordClassification: boolean; headings?: HeadingConfig },
 ): string {
+  const h = opts.headings ?? DEFAULT_HEADINGS;
   const fm: string[] = ["---"];
   fm.push(`created: ${input.날짜}`);
   fm.push(`type: 심방일지`);
@@ -100,36 +107,36 @@ export function buildVisitContent(
   const body: string[] = [];
   body.push(`# 심방기록 — ${input.날짜} ${input.memberName}`);
   body.push("");
-  body.push(VISIT_SECTIONS.basicInfo);
+  body.push(h.basicInfo);
   body.push(`- **성명:** [[${input.memberName}]]`);
   if (memberFm.연락처) body.push(`- **연락처:** ${memberFm.연락처}`);
   if (memberFm.구역) body.push(`- **소속구역:** ${memberFm.구역}`);
   if (memberFm.직분) body.push(`- **직분:** ${memberFm.직분}`);
   if (가족정보) body.push(`- **가족관계:** ${가족정보}`);
   body.push("");
-  body.push(VISIT_SECTIONS.visitInfo);
+  body.push(h.visitInfo);
   body.push(`- **심방일시:** ${input.날짜}`);
   if (input.장소) body.push(`- **심방장소:** ${input.장소}`);
   if (input.동행) body.push(`- **동행자:** ${input.동행}`);
   body.push(`- **심방유형:** ${input.심방유형}`);
   body.push("");
-  body.push(VISIT_SECTIONS.conversation);
+  body.push(h.conversation);
   body.push(`- **주요 대화 주제:**`);
   body.push(`  - `);
   body.push("");
-  body.push(VISIT_SECTIONS.prayer);
+  body.push(h.prayer);
   body.push(`- **본인 기도제목:**`);
   body.push(`  - `);
   body.push(`- **가족 기도제목:**`);
   body.push(`  - `);
   body.push("");
-  body.push(VISIT_SECTIONS.church);
+  body.push(h.church);
   body.push(`- **출석상황:** `);
   body.push(`- **봉사활동:** `);
   body.push(`- **신앙상태:** `);
   body.push(`- **교회생활 관심사:** `);
   body.push("");
-  body.push(VISIT_SECTIONS.observation);
+  body.push(h.observation);
   body.push(`### 영적상태`);
   body.push(`- **신앙성장:** `);
   body.push(`- **관심사항:** `);
@@ -140,18 +147,21 @@ export function buildVisitContent(
   body.push(`- **가정상황:** `);
   body.push(`- **직장/학업:** `);
   body.push("");
-  body.push(VISIT_SECTIONS.followUp);
+  body.push(h.followUp);
   body.push(`- [ ] `);
   body.push("");
 
   return fm.join("\n") + "\n\n" + body.join("\n");
 }
 
-/** `## 📝 대화내용` 바로 아래 첫 입력 지점(0-기반 라인) */
-export function findCursorLine(content: string): number {
+/** 대화내용 헤딩 바로 아래 첫 입력 지점(0-기반 라인) */
+export function findCursorLine(
+  content: string,
+  conversationHeading: string = DEFAULT_HEADINGS.conversation,
+): number {
   const lines = content.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].trim() === VISIT_SECTIONS.conversation.replace(/^##\s*/, "## ").trim()) {
+    if (lines[i].trim() === conversationHeading.trim()) {
       for (let j = i + 1; j < lines.length && j <= i + 3; j++) {
         if (lines[j].trim() === "-") return j;
         if (lines[j].startsWith("  - ")) return j;

@@ -32,6 +32,7 @@ export async function createVisitNote(
   const memberFm = memberEntry?.fm ?? {};
   const content = buildVisitContent(input, memberFm, {
     insertWordClassification: plugin.settings.insertWordClassification,
+    headings: plugin.settings.headings,
   });
 
   let file: TFile;
@@ -51,7 +52,7 @@ export async function createVisitNote(
   requestAnimationFrame(() => {
     const view = app.workspace.getActiveViewOfType(MarkdownView);
     if (view?.file?.path === file.path) {
-      const line = findCursorLine(content);
+      const line = findCursorLine(content, plugin.settings.headings.conversation);
       view.editor.setCursor({ line, ch: view.editor.getLine(line)?.length ?? 0 });
       view.editor.focus();
     }

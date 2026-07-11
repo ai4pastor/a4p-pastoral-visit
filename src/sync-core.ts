@@ -4,7 +4,12 @@
  * 안전 원칙: 기존 줄은 어떤 경우에도 수정·삭제하지 않는다.
  * 가능한 조작은 ① 섹션 내 특정 위치에 새 줄 삽입 ② 헤딩 부재 시 문서 말미에 섹션 신설 뿐이다.
  */
-import { EMBED_ANCHORS, MEMBER_SECTIONS, SUMMARY_EXCLUDE_LABELS, VISIT_SECTIONS } from "./constants";
+import {
+  DEFAULT_HEADINGS,
+  HeadingConfig,
+  SUMMARY_EXCLUDE_LABELS,
+  embedAnchorsOf,
+} from "./constants";
 import { nfc } from "./utils";
 
 export interface SectionRange {
@@ -36,9 +41,14 @@ export function findSectionRange(lines: string[], headingText: string): SectionR
 }
 
 /** 요약 자동 제안 — 대화내용 섹션의 볼드 주제 라벨 상위 2개 */
-export function extractSummary(visitContent: string, 심방유형: string, 날짜: string): string {
+export function extractSummary(
+  visitContent: string,
+  심방유형: string,
+  날짜: string,
+  conversationHeading: string = DEFAULT_HEADINGS.conversation,
+): string {
   const lines = visitContent.split("\n");
-  const range = findSectionRange(lines, VISIT_SECTIONS.conversation);
+  const range = findSectionRange(lines, conversationHeading);
   const labels: string[] = [];
   if (range) {
     const labelRe = /^\s*-\s+\*\*(.+?):?\*\*/;
@@ -65,10 +75,15 @@ export function buildLogLine(visitBasename: string, summary: string): string {
 }
 
 /** 임베드 섹션에 넣을 블록 (### 날짜 유형 + 임베드 3줄) */
-export function buildEmbedBlock(visitBasename: string, 날짜: string, 심방유형: string): string[] {
+export function buildEmbedBlock(
+  visitBasename: string,
+  날짜: string,
+  심방유형: string,
+  anchors: string[] = embedAnchorsOf(DEFAULT_HEADINGS),
+): string[] {
   return [
     `### ${날짜} ${심방유형}`,
-    ...EMBED_ANCHORS.map((anchor) => `![[${visitBasename}#${anchor}]]`),
+    ...anchors.map((anchor) => `![[${visitBasename}#${anchor}]]`),
   ];
 }
 
@@ -195,32 +210,33 @@ export function planSync(
   날짜: string,
   심방유형: string,
   summary: string,
+  headings: HeadingConfig = DEFAULT_HEADINGS,
 ): SyncPlan {
   const warnings: string[] = [];
   const logLine = buildLogLine(visitBasename, summary);
-  const embedBlock = buildEmbedBlock(visitBasename, 날짜, 심방유형);
+  const embedBlock = buildEmbedBlock(visitBasename, 날짜, 심방유형, embedAnchorsOf(headings));
 
   const step1 = computeAppend(
     memberContent,
-    MEMBER_SECTIONS.visitLog,
+    headings.memberVisitLog,
     [logLine],
     날짜,
     visitBasename,
     LOG_DATE_RE,
   );
-  if (step1.sectionCreated) warnings.push(`"${MEMBER_SECTIONS.visitLog}" 섹션이 없어 문서 끝에 새로 만듭니다.`);
+  if (step1.sectionCreated) warnings.push(`"${headings.memberVisitLog}" 섹션이 없어 문서 끝에 새로 만듭니다.`);
   if (step1.insertedMidway) warnings.push("심방 기록: 기존 항목보다 이른 날짜라 날짜순 위치에 삽입합니다.");
   if (step1.skipped) warnings.push("심방 기록: 이미 링크가 있어 건너뜁니다.");
 
   const step2 = computeAppend(
     step1.newContent,
-    MEMBER_SECTIONS.embeds,
+    headings.memberEmbeds,
     embedBlock,
     날짜,
     visitBasename,
     EMBED_DATE_RE,
   );
-  if (step2.sectionCreated) warnings.push(`"${MEMBER_SECTIONS.embeds}" 섹션이 없어 문서 끝에 새로 만듭니다.`);
+  if (step2.sectionCreated) warnings.push(`"${headings.memberEmbeds}" 섹션이 없어 문서 끝에 새로 만듭니다.`);
   if (step2.insertedMidway) warnings.push("임베드: 기존 항목보다 이른 날짜라 날짜순 위치에 삽입합니다.");
   if (step2.skipped) warnings.push("임베드: 이미 있어 건너뜁니다.");
 

@@ -51,7 +51,7 @@ export class ActionScanner {
       const memberName = visit.memberPath
         ? this.plugin.index.members.get(visit.memberPath)?.name ?? ""
         : "";
-      const items: ActionItem[] = parseFollowUps(content).map((p) => ({
+      const items: ActionItem[] = parseFollowUps(content, this.plugin.settings.headings.followUp).map((p) => ({
         visitPath: visit.path,
         visitBasename: visit.basename,
         memberName,

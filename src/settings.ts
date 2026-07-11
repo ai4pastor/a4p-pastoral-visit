@@ -1,6 +1,13 @@
 import { App, PluginSettingTab, Setting, TFolder } from "obsidian";
 import type PastoralVisitPlugin from "./main";
-import { NOTE_TYPE } from "./constants";
+import {
+  DEFAULT_HEADINGS,
+  HEADING_LABELS,
+  HeadingConfig,
+  NOTE_TYPE,
+  embedAnchorsOf,
+} from "./constants";
+import { nfc } from "./utils";
 import { copyGitignoreSuggestion, runPrivacyCheck } from "./privacy-check";
 import { FolderSuggest } from "./folder-suggest";
 
@@ -23,6 +30,10 @@ export interface PastoralVisitSettings {
   insertWordClassification: boolean;
   /** 기록 최소화 온보딩 Notice 표시 여부 */
   onboardingShown: boolean;
+  /** 분석·생성에 쓰는 헤딩 구성 (커스터마이즈 가능) */
+  headings: HeadingConfig;
+  /** 헤딩 변경 감지 경고 */
+  warnHeadingChanges: boolean;
 }
 
 export const DEFAULT_SETTINGS: PastoralVisitSettings = {
@@ -35,6 +46,8 @@ export const DEFAULT_SETTINGS: PastoralVisitSettings = {
   visitTypes: ["정기심방", "특별심방", "위로심방"],
   insertWordClassification: true,
   onboardingShown: false,
+  headings: { ...DEFAULT_HEADINGS },
+  warnHeadingChanges: true,
 };
 
 export class PastoralVisitSettingTab extends PluginSettingTab {
@@ -162,8 +175,21 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
 
     this.renderPrivacyCheck(containerEl);
 
-    // ── ④ 고급 ──
+    // ── ④ 분석 헤딩 ──
+    this.renderHeadingSettings(containerEl);
+
+    // ── ⑤ 고급 ──
     new Setting(containerEl).setName("고급").setHeading();
+
+    new Setting(containerEl)
+      .setName("헤딩 변경 감지 경고")
+      .setDesc("심방일지에서 표준 헤딩이 사라지면 알림을 띄웁니다 (임베드·분석이 깨지는 것을 예방).")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.warnHeadingChanges).onChange(async (value) => {
+          this.plugin.settings.warnHeadingChanges = value;
+          await this.plugin.persist();
+        }),
+      );
 
     new Setting(containerEl)
       .setName("심방유형 목록")
@@ -197,6 +223,134 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
             await this.plugin.persist();
           }),
       );
+  }
+
+  /** 분석 헤딩 커스터마이즈 + 검증 */
+  private renderHeadingSettings(containerEl: HTMLElement): void {
+    new Setting(containerEl)
+      .setName("분석 헤딩")
+      .setDesc(
+        "플러그인이 요약 추출·후속조치 수집·임베드·반영에 사용하는 헤딩입니다. 교회에서 쓰는 이름이 다르면 여기서 바꾸세요. 반드시 '## '로 시작해야 합니다. ⚠ 헤딩을 바꾸면 새로 만드는 노트부터 적용되며, 기존 노트의 임베드는 옛 헤딩을 그대로 사용합니다.",
+      )
+      .setHeading();
+
+    const keys = Object.keys(DEFAULT_HEADINGS) as Array<keyof HeadingConfig>;
+    for (const key of keys) {
+      new Setting(containerEl)
+        .setName(HEADING_LABELS[key])
+        .addText((text) => {
+          text
+            .setPlaceholder(DEFAULT_HEADINGS[key])
+            .setValue(this.plugin.settings.headings[key])
+            .onChange(async (value) => {
+              this.plugin.settings.headings[key] = value.trim() || DEFAULT_HEADINGS[key];
+              await this.plugin.persist();
+            });
+          text.inputEl.addClass("a4p-pv-heading-input");
+        });
+    }
+
+    let headingStatusEl: HTMLElement;
+
+    new Setting(containerEl)
+      .setName("헤딩 검증")
+      .setDesc("형식(## 시작·중복 없음)과 실제 노트들에서 각 헤딩이 발견되는 비율을 검사합니다.")
+      .addButton((btn) =>
+        btn
+          .setButtonText("검증")
+          .setCta()
+          .onClick(() => {
+            this.renderValidation(headingStatusEl, this.validateHeadings());
+          }),
+      )
+      .addButton((btn) =>
+        btn.setButtonText("기본값 복원").onClick(async () => {
+          this.plugin.settings.headings = { ...DEFAULT_HEADINGS };
+          await this.plugin.persist();
+          this.display(); // 입력란 갱신
+        }),
+      );
+
+    headingStatusEl = containerEl.createDiv({ cls: "a4p-pv-settings-status" });
+  }
+
+  /**
+   * 헤딩 구성 검증:
+   * ① 형식 — '## ' 시작, 빈 값 없음, 서로 중복 없음
+   * ② 커버리지 — 실제 심방일지/성도 노트에서 각 헤딩이 발견되는 건수
+   */
+  private validateHeadings(): { ok: boolean; messages: string[] } {
+    const messages: string[] = [];
+    let ok = true;
+    const h = this.plugin.settings.headings;
+    const keys = Object.keys(h) as Array<keyof HeadingConfig>;
+
+    // ① 형식 검사
+    const seen = new Map<string, keyof HeadingConfig>();
+    for (const key of keys) {
+      const value = h[key];
+      if (!value.trim()) {
+        messages.push(`✗ ${HEADING_LABELS[key]}: 비어 있습니다.`);
+        ok = false;
+        continue;
+      }
+      if (!/^##\s+\S/.test(value)) {
+        messages.push(`✗ ${HEADING_LABELS[key]}: '## '로 시작하는 2단계 헤딩이어야 합니다 — "${value}"`);
+        ok = false;
+      }
+      const normalized = nfc(value.trim());
+      const dup = seen.get(normalized);
+      if (dup) {
+        messages.push(`✗ ${HEADING_LABELS[key]}: "${HEADING_LABELS[dup]}"와 헤딩이 중복됩니다.`);
+        ok = false;
+      } else {
+        seen.set(normalized, key);
+      }
+    }
+    if (ok) messages.push("✓ 형식 검사 통과 (## 시작 · 중복 없음)");
+
+    // ② 커버리지 — metadataCache의 헤딩 목록으로 실제 노트 대조
+    const visitKeys: Array<keyof HeadingConfig> = [
+      "basicInfo", "visitInfo", "conversation", "prayer", "church", "observation", "followUp",
+    ];
+    const memberKeys: Array<keyof HeadingConfig> = ["memberVisitLog", "memberEmbeds"];
+
+    const countHeading = (paths: string[], heading: string): number => {
+      const target = nfc(heading.replace(/^##\s*/, "").trim());
+      let count = 0;
+      for (const path of paths) {
+        const file = this.app.vault.getFileByPath(path);
+        if (!file) continue;
+        const headings = this.app.metadataCache.getFileCache(file)?.headings ?? [];
+        if (headings.some((hd) => hd.level === 2 && nfc(hd.heading.trim()) === target)) count++;
+      }
+      return count;
+    };
+
+    const visitPaths = this.plugin.index.visitsList().map((v) => v.path);
+    const memberPaths = this.plugin.index.membersList().map((m) => m.path);
+
+    if (visitPaths.length > 0) {
+      for (const key of visitKeys) {
+        const found = countHeading(visitPaths, h[key]);
+        const mark = found === 0 ? "⚠" : "✓";
+        messages.push(`${mark} ${HEADING_LABELS[key]}: 심방일지 ${visitPaths.length}건 중 ${found}건에서 발견`);
+        if (found === 0) messages.push(`  → 이 헤딩으로는 기존 일지를 분석할 수 없습니다. 헤딩명을 확인하세요.`);
+      }
+    } else {
+      messages.push("· 심방일지가 없어 커버리지 검사를 건너뜁니다.");
+    }
+
+    if (memberPaths.length > 0) {
+      for (const key of memberKeys) {
+        const found = countHeading(memberPaths, h[key]);
+        const mark = found === 0 ? "⚠" : "✓";
+        messages.push(`${mark} ${HEADING_LABELS[key]}: 성도 노트 ${memberPaths.length}건 중 ${found}건에서 발견`);
+      }
+    }
+
+    messages.push(`ℹ 임베드 앵커 3종: ${embedAnchorsOf(h).join(" · ")}`);
+    return { ok, messages };
   }
 
   /** 폴더 존재 + type별 노트 수 검증 */

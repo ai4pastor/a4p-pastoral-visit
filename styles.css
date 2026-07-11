@@ -187,6 +187,10 @@
   margin: 4px 0;
 }
 
+.a4p-pv-heading-input {
+  min-width: 260px;
+}
+
 /* ── 설정 ── */
 .a4p-pv-settings-status {
   margin: 8px 0 16px;

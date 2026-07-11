@@ -1,7 +1,7 @@
 /**
  * 후속조치 체크박스 파싱·토글의 순수 로직 (obsidian 비의존, vitest 대상).
  */
-import { VISIT_SECTIONS } from "./constants";
+import { DEFAULT_HEADINGS } from "./constants";
 import { findSectionRange } from "./sync-core";
 
 export interface ParsedFollowUp {
@@ -15,10 +15,13 @@ export interface ParsedFollowUp {
 
 const CHECKBOX_RE = /^(\s*)- \[( |x|X)\] (.*)$/;
 
-/** 일지 본문에서 `## 💡 후속조치` 섹션 내 체크박스 수집 */
-export function parseFollowUps(content: string): ParsedFollowUp[] {
+/** 일지 본문에서 후속조치 섹션 내 체크박스 수집 */
+export function parseFollowUps(
+  content: string,
+  followUpHeading: string = DEFAULT_HEADINGS.followUp,
+): ParsedFollowUp[] {
   const lines = content.split("\n");
-  const range = findSectionRange(lines, VISIT_SECTIONS.followUp);
+  const range = findSectionRange(lines, followUpHeading);
   if (!range) return [];
   const items: ParsedFollowUp[] = [];
   for (let i = range.headingLine + 1; i < range.endLine; i++) {

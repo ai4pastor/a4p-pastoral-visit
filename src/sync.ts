@@ -64,7 +64,7 @@ export async function openSyncFlow(plugin: PastoralVisitPlugin, visitFile: TFile
     memberName: memberFile.basename,
     날짜,
     심방유형,
-    suggestedSummary: extractSummary(visitContent, 심방유형, 날짜),
+    suggestedSummary: extractSummary(visitContent, 심방유형, 날짜, plugin.settings.headings.conversation),
     currentStatus: typeof memberFm?.심방상태 === "string" ? memberFm.심방상태 : "",
   };
 
@@ -90,7 +90,10 @@ export async function executeSync(
   let nothingToDo = false;
   try {
     await app.vault.process(ctx.memberFile, (content) => {
-      const plan = planSync(content, ctx.visitBasename, ctx.날짜, ctx.심방유형, summary);
+      const plan = planSync(
+        content, ctx.visitBasename, ctx.날짜, ctx.심방유형, summary,
+        plugin.settings.headings,
+      );
       nothingToDo = plan.nothingToDo;
       return plan.newContent;
     });

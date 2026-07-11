@@ -8,6 +8,7 @@ import { openSyncFlow } from "./sync";
 import { ActionScanner } from "./actions";
 import { PastoralVisitView, VIEW_TYPE_PASTORAL_VISIT } from "./view";
 import { SyncBanner } from "./sync-banner";
+import { HeadingWatcher } from "./heading-watch";
 import { setIcon } from "obsidian";
 
 interface PersistedState {
@@ -30,6 +31,7 @@ export default class PastoralVisitPlugin extends Plugin {
     this.actions.start();
     this.banner = new SyncBanner(this);
     this.banner.start();
+    new HeadingWatcher(this).start();
     this.initStatusBar();
 
     this.addSettingTab(new PastoralVisitSettingTab(this.app, this));
@@ -136,6 +138,7 @@ export default class PastoralVisitPlugin extends Plugin {
       ...DEFAULT_SETTINGS,
       ...saved,
       visitTypes: saved.visitTypes ?? [...DEFAULT_SETTINGS.visitTypes],
+      headings: { ...DEFAULT_SETTINGS.headings, ...(saved.headings ?? {}) },
     };
   }
 

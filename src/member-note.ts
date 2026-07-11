@@ -42,6 +42,7 @@ export async function createMemberNote(
   const content = buildMemberContent(input, {
     insertWordClassification: plugin.settings.insertWordClassification,
     today: todayStr,
+    headings: plugin.settings.headings,
   });
 
   let file: TFile;

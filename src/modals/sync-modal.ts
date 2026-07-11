@@ -1,6 +1,6 @@
 import { Modal, Setting } from "obsidian";
 import type PastoralVisitPlugin from "../main";
-import { VISIT_STATUS } from "../constants";
+import { VISIT_STATUS, embedAnchorsOf } from "../constants";
 import { buildEmbedBlock, buildLogLine, planSync } from "../sync-core";
 import { SyncContext, executeSync } from "../sync";
 
@@ -79,6 +79,7 @@ export class SyncModal extends Modal {
       this.ctx.날짜,
       this.ctx.심방유형,
       this.summary,
+      this.plugin.settings.headings,
     );
 
     el.createEl("p", { text: "성도 노트에 추가될 내용:", cls: "a4p-pv-preview-label" });
@@ -87,7 +88,14 @@ export class SyncModal extends Modal {
     logBox.setText(buildLogLine(this.ctx.visitBasename, this.summary));
 
     const embedBox = el.createEl("pre", { cls: "a4p-pv-preview-box" });
-    embedBox.setText(buildEmbedBlock(this.ctx.visitBasename, this.ctx.날짜, this.ctx.심방유형).join("\n"));
+    embedBox.setText(
+      buildEmbedBlock(
+        this.ctx.visitBasename,
+        this.ctx.날짜,
+        this.ctx.심방유형,
+        embedAnchorsOf(this.plugin.settings.headings),
+      ).join("\n"),
+    );
 
     for (const warning of plan.warnings) {
       el.createEl("p", { text: `⚠ ${warning}`, cls: "a4p-pv-preview-warn" });
