@@ -1,7 +1,7 @@
 import { MarkdownView, Notice, TFile } from "obsidian";
 import type PastoralVisitPlugin from "./main";
 import { NOTE_TYPE, VISIT_STATUS } from "./constants";
-import { extractSummary, planSync } from "./sync-core";
+import { extractSummary, planSync, resolveAnchors } from "./sync-core";
 import { SyncModal } from "./modals/sync-modal";
 
 export interface SyncContext {
@@ -15,6 +15,8 @@ export interface SyncContext {
   suggestedSummary: string;
   /** 현재 심방상태 */
   currentStatus: string;
+  /** 일지의 실제 헤딩에서 해석한 임베드 앵커 3종 */
+  anchors: string[];
 }
 
 /** 반영 진입점 — 검증 후 미리보기 모달 오픈 */
@@ -66,6 +68,7 @@ export async function openSyncFlow(plugin: PastoralVisitPlugin, visitFile: TFile
     심방유형,
     suggestedSummary: extractSummary(visitContent, 심방유형, 날짜, plugin.settings.headings.conversation),
     currentStatus: typeof memberFm?.심방상태 === "string" ? memberFm.심방상태 : "",
+    anchors: resolveAnchors(visitContent, plugin.settings.headings),
   };
 
   new SyncModal(plugin, ctx).open();
@@ -92,7 +95,7 @@ export async function executeSync(
     await app.vault.process(ctx.memberFile, (content) => {
       const plan = planSync(
         content, ctx.visitBasename, ctx.날짜, ctx.심방유형, summary,
-        plugin.settings.headings,
+        plugin.settings.headings, ctx.anchors,
       );
       nothingToDo = plan.nothingToDo;
       return plan.newContent;

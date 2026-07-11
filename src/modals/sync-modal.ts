@@ -1,6 +1,6 @@
 import { Modal, Setting } from "obsidian";
 import type PastoralVisitPlugin from "../main";
-import { VISIT_STATUS, embedAnchorsOf } from "../constants";
+import { VISIT_STATUS } from "../constants";
 import { buildEmbedBlock, buildLogLine, planSync } from "../sync-core";
 import { SyncContext, executeSync } from "../sync";
 
@@ -80,6 +80,7 @@ export class SyncModal extends Modal {
       this.ctx.심방유형,
       this.summary,
       this.plugin.settings.headings,
+      this.ctx.anchors,
     );
 
     el.createEl("p", { text: "성도 노트에 추가될 내용:", cls: "a4p-pv-preview-label" });
@@ -93,7 +94,7 @@ export class SyncModal extends Modal {
         this.ctx.visitBasename,
         this.ctx.날짜,
         this.ctx.심방유형,
-        embedAnchorsOf(this.plugin.settings.headings),
+        this.ctx.anchors,
       ).join("\n"),
     );
 

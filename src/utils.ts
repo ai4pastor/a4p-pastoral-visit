@@ -82,6 +82,18 @@ export function nfc(s: string): string {
   return s.normalize("NFC");
 }
 
+/**
+ * 헤딩 느슨 비교용 정규화 — `##` 접두, 이모지(변형 선택자·ZWJ 포함), 중복 공백 제거.
+ * `## 📝 대화내용`과 `## 대화내용`(이모지 없음)이 같은 섹션으로 인식되게 한다.
+ */
+export function looseHeadingText(s: string): string {
+  return nfc(s)
+    .replace(/^#+\s*/, "")
+    .replace(/[\p{Extended_Pictographic}️‍]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }

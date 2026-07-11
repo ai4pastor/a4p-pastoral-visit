@@ -10,7 +10,7 @@ import {
   SUMMARY_EXCLUDE_LABELS,
   embedAnchorsOf,
 } from "./constants";
-import { nfc } from "./utils";
+import { looseHeadingText, nfc } from "./utils";
 
 export interface SectionRange {
   /** 헤딩 라인 (0-기반) */
@@ -19,7 +19,11 @@ export interface SectionRange {
   endLine: number;
 }
 
-/** 헤딩 텍스트(trim+NFC 완전 일치)로 `## ` 섹션 범위 탐지. `###` 하위 헤딩은 통과 */
+/**
+ * 헤딩 텍스트로 `## ` 섹션 범위 탐지. `###` 하위 헤딩은 통과.
+ * 1차: trim+NFC 완전 일치. 2차: 이모지·공백을 무시한 느슨 일치
+ * (`## 대화내용`처럼 이모지 없이 써도 인식).
+ */
 export function findSectionRange(lines: string[], headingText: string): SectionRange | null {
   const target = nfc(headingText.trim());
   let headingLine = -1;
@@ -27,6 +31,18 @@ export function findSectionRange(lines: string[], headingText: string): SectionR
     if (nfc(lines[i].trim()) === target) {
       headingLine = i;
       break;
+    }
+  }
+  if (headingLine === -1) {
+    const looseTarget = looseHeadingText(headingText);
+    if (looseTarget) {
+      for (let i = 0; i < lines.length; i++) {
+        if (!/^##\s/.test(lines[i]) || /^###/.test(lines[i])) continue;
+        if (looseHeadingText(lines[i]) === looseTarget) {
+          headingLine = i;
+          break;
+        }
+      }
     }
   }
   if (headingLine === -1) return null;
@@ -72,6 +88,24 @@ export function extractSummary(
 /** 심방 기록 섹션에 넣을 한 줄 */
 export function buildLogLine(visitBasename: string, summary: string): string {
   return `- [[${visitBasename}]] — ${summary}`;
+}
+
+/**
+ * 일지 본문에서 임베드 앵커 3종(대화내용·기도제목·후속조치)의 **실제 헤딩 텍스트**를 해석.
+ * 이모지 없이 쓴 헤딩(`## 대화내용`)도 느슨 매칭으로 찾아, 임베드가 실제 헤딩과
+ * 정확히 일치하도록 한다 (옵시디언 섹션 임베드는 헤딩 텍스트가 주소이므로).
+ * 섹션을 못 찾으면 설정 헤딩의 앵커로 폴백.
+ */
+export function resolveAnchors(visitContent: string, headings: HeadingConfig): string[] {
+  const lines = visitContent.split("\n");
+  const keys: Array<keyof HeadingConfig> = ["conversation", "prayer", "followUp"];
+  return keys.map((key) => {
+    const range = findSectionRange(lines, headings[key]);
+    if (range) {
+      return nfc(lines[range.headingLine].replace(/^##\s*/, "").trim());
+    }
+    return headings[key].replace(/^##\s*/, "").trim();
+  });
 }
 
 /** 임베드 섹션에 넣을 블록 (### 날짜 유형 + 임베드 3줄) */
@@ -211,10 +245,12 @@ export function planSync(
   심방유형: string,
   summary: string,
   headings: HeadingConfig = DEFAULT_HEADINGS,
+  /** 일지의 실제 헤딩에서 해석한 임베드 앵커 (resolveAnchors 결과). 없으면 설정 헤딩 기준 */
+  anchors?: string[],
 ): SyncPlan {
   const warnings: string[] = [];
   const logLine = buildLogLine(visitBasename, summary);
-  const embedBlock = buildEmbedBlock(visitBasename, 날짜, 심방유형, embedAnchorsOf(headings));
+  const embedBlock = buildEmbedBlock(visitBasename, 날짜, 심방유형, anchors ?? embedAnchorsOf(headings));
 
   const step1 = computeAppend(
     memberContent,

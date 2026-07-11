@@ -1,7 +1,7 @@
 import { Notice, TFile } from "obsidian";
 import type PastoralVisitPlugin from "./main";
 import { HEADING_LABELS, HeadingConfig, NOTE_TYPE } from "./constants";
-import { nfc } from "./utils";
+import { looseHeadingText } from "./utils";
 
 /** 분석에 실제로 쓰이는 헤딩만 감시 (기본정보·심방정보 등 정보성 섹션은 제외) */
 const WATCHED_KEYS: Array<keyof HeadingConfig> = ["conversation", "prayer", "followUp"];
@@ -41,17 +41,18 @@ export class HeadingWatcher {
     const cache = this.plugin.app.metadataCache.getFileCache(file);
     if (cache?.frontmatter?.type !== NOTE_TYPE.visit) return;
 
+    // 이모지 유무를 무시한 느슨 비교 — `## 대화내용`도 정상으로 인정
     const present = new Set(
       (cache.headings ?? [])
         .filter((h) => h.level === 2)
-        .map((h) => nfc(h.heading.trim())),
+        .map((h) => looseHeadingText(h.heading)),
     );
 
     const h = this.plugin.settings.headings;
     const missing = new Set<string>();
     for (const key of WATCHED_KEYS) {
-      const anchor = nfc(h[key].replace(/^##\s*/, "").trim());
-      if (!present.has(anchor)) missing.add(anchor);
+      const anchor = looseHeadingText(h[key]);
+      if (anchor && !present.has(anchor)) missing.add(anchor);
     }
 
     const prev = this.warned.get(file.path) ?? new Set<string>();
@@ -59,7 +60,7 @@ export class HeadingWatcher {
 
     if (newlyMissing.length > 0) {
       const labels = WATCHED_KEYS.filter((key) =>
-        newlyMissing.includes(nfc(h[key].replace(/^##\s*/, "").trim())),
+        newlyMissing.includes(looseHeadingText(h[key])),
       ).map((key) => `"${h[key]}"(${HEADING_LABELS[key].replace(/ \(.+\)$/, "")})`);
       new Notice(
         `⚠ ${file.basename}: 표준 헤딩 ${labels.join(", ")}이(가) 없습니다.\n성도 노트의 임베드와 요약·후속조치 분석이 이 섹션을 찾지 못합니다. 헤딩을 되돌리거나, 설정 → 분석 헤딩에서 이름을 맞춰 주세요.`,

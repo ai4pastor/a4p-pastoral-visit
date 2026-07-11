@@ -7,7 +7,7 @@ import {
   NOTE_TYPE,
   embedAnchorsOf,
 } from "./constants";
-import { nfc } from "./utils";
+import { looseHeadingText, nfc } from "./utils";
 import { copyGitignoreSuggestion, runPrivacyCheck } from "./privacy-check";
 import { FileSuggest, FolderSuggest } from "./folder-suggest";
 import { WordValues, parseWordValues } from "./word-config";
@@ -456,14 +456,15 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
     ];
     const memberKeys: Array<keyof HeadingConfig> = ["memberVisitLog", "memberEmbeds"];
 
+    // 이모지 유무를 무시한 느슨 비교 (분석 로직과 동일 기준)
     const countHeading = (paths: string[], heading: string): number => {
-      const target = nfc(heading.replace(/^##\s*/, "").trim());
+      const target = looseHeadingText(heading);
       let count = 0;
       for (const path of paths) {
         const file = this.app.vault.getFileByPath(path);
         if (!file) continue;
         const headings = this.app.metadataCache.getFileCache(file)?.headings ?? [];
-        if (headings.some((hd) => hd.level === 2 && nfc(hd.heading.trim()) === target)) count++;
+        if (headings.some((hd) => hd.level === 2 && looseHeadingText(hd.heading) === target)) count++;
       }
       return count;
     };
