@@ -181,6 +181,11 @@
   word-break: break-all;
 }
 
+.a4p-pv-preview-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
 .a4p-pv-preview-warn {
   color: var(--text-warning);
   font-size: var(--font-ui-small);

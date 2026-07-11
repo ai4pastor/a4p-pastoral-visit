@@ -30,6 +30,10 @@ export interface PastoralVisitSettings {
   insertWordClassification: boolean;
   /** 기록 최소화 온보딩 Notice 표시 여부 */
   onboardingShown: boolean;
+  /** 주간 기도제목 모음 저장 폴더 */
+  prayerDigestFolder: string;
+  /** 기도 모음 기본 수집 범위 (주) */
+  prayerDigestWeeks: number;
   /** 분석·생성에 쓰는 헤딩 구성 (커스터마이즈 가능) */
   headings: HeadingConfig;
   /** 헤딩 변경 감지 경고 */
@@ -46,6 +50,8 @@ export const DEFAULT_SETTINGS: PastoralVisitSettings = {
   visitTypes: ["정기심방", "특별심방", "위로심방"],
   insertWordClassification: true,
   onboardingShown: false,
+  prayerDigestFolder: "400. Education & Ministry/460. 성도/기도모음",
+  prayerDigestWeeks: 4,
   headings: { ...DEFAULT_HEADINGS },
   warnHeadingChanges: true,
 };
@@ -104,6 +110,20 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
             this.renderValidation(statusEl, this.validateFolders());
           }),
       );
+
+    new Setting(containerEl)
+      .setName("기도 모음 폴더")
+      .setDesc("주간 기도제목 모음 노트가 생성되는 폴더입니다. 클릭하면 폴더 목록이 뜹니다.")
+      .addText((text) => {
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.prayerDigestFolder)
+          .setValue(this.plugin.settings.prayerDigestFolder)
+          .onChange(async (value) => {
+            this.plugin.settings.prayerDigestFolder = value.trim();
+            await this.plugin.persist();
+          });
+        new FolderSuggest(this.app, text.inputEl);
+      });
 
     statusEl = containerEl.createDiv({ cls: "a4p-pv-settings-status" });
 

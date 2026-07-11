@@ -7,6 +7,7 @@ import { NOTE_TYPE } from "./constants";
 import { openSyncFlow } from "./sync";
 import { ActionScanner } from "./actions";
 import { PrayerScanner } from "./prayers";
+import { PrayerDigestModal } from "./modals/prayer-digest-modal";
 import { PastoralVisitView, VIEW_TYPE_PASTORAL_VISIT } from "./view";
 import { SyncBanner } from "./sync-banner";
 import { HeadingWatcher } from "./heading-watch";
@@ -72,6 +73,12 @@ export default class PastoralVisitPlugin extends Plugin {
       id: "new-visit",
       name: "심방일지 작성",
       callback: () => new VisitModal(this, this.activeMemberPath() ?? undefined).open(),
+    });
+
+    this.addCommand({
+      id: "prayer-digest",
+      name: "주간 기도제목 모음 생성",
+      callback: () => new PrayerDigestModal(this).open(),
     });
 
     this.addCommand({

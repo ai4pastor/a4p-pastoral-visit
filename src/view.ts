@@ -3,6 +3,7 @@ import type PastoralVisitPlugin from "./main";
 import { VISIT_STATUS } from "./constants";
 import { MemberEntry, ActionItem, PrayerItem } from "./types";
 import { VisitModal } from "./modals/visit-modal";
+import { PrayerDigestModal } from "./modals/prayer-digest-modal";
 import { openSyncFlow } from "./sync";
 import { maskBirth } from "./mask";
 import { birthdayDday, daysSince, formatRelativeKo, monthsBetween } from "./utils";
@@ -310,6 +311,10 @@ export class PastoralVisitView extends ItemView {
         void this.render();
       });
     }
+
+    const digestBtn = chips.createEl("button", { text: "📄 주간 모음", cls: "a4p-pv-chip" });
+    digestBtn.title = "주간 기도제목 모음 노트 생성 (미리보기 후)";
+    digestBtn.addEventListener("click", () => new PrayerDigestModal(this.plugin).open());
 
     let prayers = await this.plugin.prayers.scanAll();
     if (this.prayerFilter === "active") prayers = prayers.filter((p) => !p.answered);

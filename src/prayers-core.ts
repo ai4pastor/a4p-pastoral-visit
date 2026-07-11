@@ -67,6 +67,90 @@ export function parsePrayers(
   return items;
 }
 
+// ── 주간 기도제목 모음 ──
+
+export interface DigestPrayer {
+  text: string;
+  group: string;
+  visitDate: string;
+  visitBasename: string;
+  answered: boolean;
+  answeredDate: string | null;
+}
+
+export interface DigestEntry {
+  memberName: string;
+  /** 직분·구역 등 부가 정보 (없으면 "") */
+  memberMeta: string;
+  items: DigestPrayer[];
+}
+
+export interface DigestOptions {
+  /** 생성일 (YYYY-MM-DD) */
+  dateStr: string;
+  /** 수집 범위 라벨 (예: "최근 4주 (2026-06-14 ~ 2026-07-12)") */
+  rangeLabel: string;
+  /** 응답 표시된 항목도 포함 (감사 제목으로 별도 표기) */
+  includeAnswered: boolean;
+  insertWordClassification: boolean;
+  worldValue: string;
+  routeValue: string;
+}
+
+/**
+ * 주간 기도제목 모음 노트 콘텐츠 조립 — 순수 함수.
+ * 성도별 섹션 + 각 기도제목에 그룹·출처 일지 wikilink. 새벽기도·중보기도회 자료용.
+ */
+export function buildPrayerDigest(entries: DigestEntry[], opts: DigestOptions): string {
+  const fm: string[] = ["---"];
+  fm.push(`created: ${opts.dateStr}`);
+  fm.push(`type: 기도모음`);
+  fm.push(`날짜: ${opts.dateStr}`);
+  fm.push(`tags:`);
+  fm.push(`  - 기도`);
+  fm.push(`  - 기도모음`);
+  if (opts.insertWordClassification) {
+    fm.push(`world:`);
+    fm.push(`  - "${opts.worldValue}"`);
+    fm.push(`route:`);
+    fm.push(`  - "${opts.routeValue}"`);
+  }
+  fm.push(`created_via: a4p-pastoral-visit`);
+  fm.push("---");
+
+  const total = entries.reduce((n, e) => n + e.items.length, 0);
+  const activeCount = entries.reduce((n, e) => n + e.items.filter((i) => !i.answered).length, 0);
+
+  const body: string[] = [];
+  body.push(`# 주간 기도제목 — ${opts.dateStr}`);
+  body.push("");
+  body.push(`> [!info] ${opts.rangeLabel} 심방일지에서 수집 · 진행 중 ${activeCount}건${opts.includeAnswered ? ` · 전체 ${total}건` : ""}`);
+  body.push("");
+
+  for (const entry of entries) {
+    if (entry.items.length === 0) continue;
+    const meta = entry.memberMeta ? ` (${entry.memberMeta})` : "";
+    body.push(`## [[${entry.memberName}]]${meta}`);
+    body.push("");
+    for (const item of entry.items) {
+      const src = ` — ${item.group ? `${item.group} · ` : ""}[[${item.visitBasename}|${item.visitDate}]]`;
+      if (item.answered) {
+        body.push(`- ~~${item.text}~~ ✅ 감사${item.answeredDate ? ` (${item.answeredDate})` : ""}${src}`);
+      } else {
+        body.push(`- ${item.text}${src}`);
+      }
+    }
+    body.push("");
+  }
+
+  if (total === 0) {
+    body.push("(수집된 기도제목이 없습니다)");
+    body.push("");
+  }
+
+  return fm.join("\n") + "\n\n" + body.join("\n");
+}
+
 export interface PrayerToggleResult {
   newContent: string;
   /** 라인 원문이 달라져 있어 변경하지 않았는가 */
