@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting, TFolder } from "obsidian";
 import type PastoralVisitPlugin from "./main";
 import { NOTE_TYPE } from "./constants";
 import { copyGitignoreSuggestion, runPrivacyCheck } from "./privacy-check";
+import { FolderSuggest } from "./folder-suggest";
 
 export interface PastoralVisitSettings {
   /** 성도 노트 폴더 (교인노트 스캔 대상) */
@@ -55,8 +56,8 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("성도 노트 폴더")
-      .setDesc("볼트 루트 기준. 이 폴더의 교인노트(type: 교인노트)를 관리합니다.")
-      .addText((text) =>
+      .setDesc("볼트 루트 기준. 이 폴더의 교인노트(type: 교인노트)를 관리합니다. 클릭하면 폴더 목록이 뜹니다.")
+      .addText((text) => {
         text
           .setPlaceholder(DEFAULT_SETTINGS.memberFolder)
           .setValue(this.plugin.settings.memberFolder)
@@ -64,13 +65,14 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
             this.plugin.settings.memberFolder = value.trim();
             await this.plugin.persist();
             this.plugin.index?.requestFullScan();
-          }),
-      );
+          });
+        new FolderSuggest(this.app, text.inputEl);
+      });
 
     new Setting(containerEl)
       .setName("심방일지 폴더")
-      .setDesc("심방일지가 생성·스캔되는 폴더입니다.")
-      .addText((text) =>
+      .setDesc("심방일지가 생성·스캔되는 폴더입니다. 클릭하면 폴더 목록이 뜹니다.")
+      .addText((text) => {
         text
           .setPlaceholder(DEFAULT_SETTINGS.visitFolder)
           .setValue(this.plugin.settings.visitFolder)
@@ -78,8 +80,9 @@ export class PastoralVisitSettingTab extends PluginSettingTab {
             this.plugin.settings.visitFolder = value.trim();
             await this.plugin.persist();
             this.plugin.index?.requestFullScan();
-          }),
-      )
+          });
+        new FolderSuggest(this.app, text.inputEl);
+      })
       .addButton((btn) =>
         btn
           .setButtonText("검증")
