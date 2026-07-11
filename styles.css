@@ -1,0 +1,199 @@
+/* A4P Pastoral Visit */
+
+/* ── 사이드 패널 ── */
+.a4p-pv-panel {
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.a4p-pv-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.a4p-pv-tab {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: var(--font-ui-small);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+.a4p-pv-tab.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.a4p-pv-card {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+}
+
+.a4p-pv-card-title,
+.a4p-pv-card summary {
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+  margin-bottom: 6px;
+  cursor: default;
+}
+
+.a4p-pv-card summary {
+  cursor: pointer;
+}
+
+.a4p-pv-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+}
+
+.a4p-pv-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.a4p-pv-row-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.a4p-pv-row-name {
+  font-weight: 600;
+}
+
+.a4p-pv-row-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
+}
+
+.a4p-pv-row-btn {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-size: var(--font-ui-smaller);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.a4p-pv-empty {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin: 4px 0;
+}
+
+.a4p-pv-more {
+  width: 100%;
+  margin-top: 4px;
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+.a4p-pv-footer {
+  margin-top: 8px;
+  text-align: center;
+  font-size: var(--font-ui-smaller);
+}
+
+.a4p-pv-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.a4p-pv-chip {
+  padding: 3px 10px;
+  font-size: var(--font-ui-smaller);
+  border-radius: 12px;
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+.a4p-pv-chip.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.a4p-pv-action-row {
+  align-items: flex-start;
+}
+
+.a4p-pv-action-row input[type="checkbox"] {
+  margin-top: 2px;
+}
+
+.a4p-pv-action-row .a4p-pv-row-main {
+  white-space: normal;
+}
+
+/* ── 모달 ── */
+.a4p-pv-modal-warn {
+  color: var(--text-error);
+  font-size: var(--font-ui-small);
+  margin: 4px 0;
+}
+
+.a4p-pv-modal-details {
+  margin: 12px 0;
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.a4p-pv-modal-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+}
+
+.a4p-pv-summary-input {
+  width: 100%;
+  min-width: 320px;
+}
+
+.a4p-pv-sync-preview {
+  margin: 10px 0;
+}
+
+.a4p-pv-preview-label {
+  font-weight: 600;
+  font-size: var(--font-ui-small);
+  margin-bottom: 4px;
+}
+
+.a4p-pv-preview-box {
+  padding: 8px;
+  margin: 4px 0;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.a4p-pv-preview-warn {
+  color: var(--text-warning);
+  font-size: var(--font-ui-small);
+  margin: 4px 0;
+}
+
+/* ── 설정 ── */
+.a4p-pv-settings-status {
+  margin: 8px 0 16px;
+}
+
+.a4p-pv-settings-status-line {
+  margin: 2px 0;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}

@@ -1,0 +1,29 @@
+{
+  "name": "a4p-pastoral-visit",
+  "version": "0.1.0",
+  "description": "성도 명부와 심방 기록을 하나의 흐름으로 관리하는 옵시디언 플러그인",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "typecheck": "tsc -noEmit -skipLibCheck",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "obsidian",
+    "pastoral-visit",
+    "church",
+    "plugin"
+  ],
+  "author": "abadcsh",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "0.20.2",
+    "obsidian": "latest",
+    "tslib": "2.6.2",
+    "typescript": "5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
