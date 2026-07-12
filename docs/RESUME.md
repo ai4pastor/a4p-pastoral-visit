@@ -4,9 +4,9 @@
 
 ## 현재 상태 (한눈에)
 
-- **v0.2 기능 완성** — 빌드·테스트(131건) 통과. manifest/package/versions 0.2.0으로 상향
+- **v0.2 기능 완성 + 첫 릴리스 발행** — 빌드·테스트(131건) 통과
 - GitHub: `ai4pastor/a4p-pastoral-visit` (**private**, main 브랜치)
-- **아직 태그/릴리스 없음** — BRAT 배포하려면 태그 푸시 필요 (release.yml이 자동 처리)
+- **릴리스 0.2.0 발행됨** (2026-07-12, release.yml 자동 빌드 — main.js/manifest.json/styles.css 첨부) → BRAT 설치 테스트 가능
 - v0.2에서 추가된 것:
   - **디자인 고급화** — UI 크롬 이모지 → Lucide 전면 전환(`safeIcon` 폴백), styles.css 간격/폰트 토큰화(`--size-4-*`, `--font-semibold`), 카운트 뱃지(pill, neutral/warn/accent), 공용 빈 상태(`renderEmpty`, CTA 지원), 카드 접기(`<details>` + `collapsedCards` 설정 저장), 포커스 링·hover 트랜지션·reduced-motion, 행 키보드 접근(tabIndex+Enter/Space)
   - **미리보기 diff화** — `SyncPlan.insertions` 필드 추가(계약 유지, 필드만), sync/prayer-digest 모달이 `renderDiff`(파일 헤더 + 섹션 컨텍스트 + `+` 초록 라인)와 `callout` 사용
@@ -37,7 +37,7 @@
 
 1. **dev 볼트에서 사용자 수동 E2E** — 탭 4개 전환, 카드 접기 상태 유지(재시작 후), 성도 검색, 브리핑 진입 3경로(행 클릭/커맨드/우클릭), 마스킹 on/off 시 브리핑 연락처, diff 미리보기 → 반영 멱등, 키보드 탐색(Tab/Enter)
 2. **테마 매트릭스 확인** — 기본 라이트/다크 + Minimal, 액센트 2종에서 뱃지 warn 틴트·diff 초록 틴트·칩 대비 확인 (color-mix 틴트가 다크에서 안 보이면 `.theme-dark` 스코프로 16~18% 상향)
-3. **v0.2.0 태그 푸시 → 첫 릴리스** — `git tag 0.2.0 && git push origin 0.2.0` (release.yml이 자동 빌드·릴리스) → BRAT 설치 테스트
+3. **BRAT 설치 테스트** — 릴리스 0.2.0은 발행됨. private 리포라 BRAT에서 GitHub 토큰 설정 필요할 수 있음
 4. v0.3 후보: 연락 템플릿(#3), 소급 반영 마이그레이션(#8), 월간 통계 리포트(#4) — `docs/03-확장아이디어.md`
 5. 강의 자료화: `docs/03-확장아이디어.md`의 90분 실습 커리큘럼 참조
 
