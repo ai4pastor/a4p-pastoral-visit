@@ -228,6 +228,16 @@ export function computeAppend(
   };
 }
 
+/** 미리보기(diff)용 — 어느 섹션에 어떤 줄이 추가되는가 (읽기 전용 파생 정보) */
+export interface SyncInsertion {
+  /** 대상 섹션 헤딩 (신설 시에도 이 텍스트) */
+  heading: string;
+  /** 추가될 줄들 */
+  lines: string[];
+  /** 섹션이 없어 문서 끝에 신설되는가 */
+  sectionCreated: boolean;
+}
+
 export interface SyncPlan {
   newContent: string;
   logLine: string;
@@ -235,6 +245,8 @@ export interface SyncPlan {
   warnings: string[];
   /** 두 섹션 모두 이미 반영돼 있어 변경 없음 */
   nothingToDo: boolean;
+  /** 실제로 추가되는 삽입 목록 (건너뛴 섹션 제외) */
+  insertions: SyncInsertion[];
 }
 
 /** 성도 노트 반영 전체 계획 — 심방 기록 줄 + 임베드 블록 */
@@ -276,11 +288,28 @@ export function planSync(
   if (step2.insertedMidway) warnings.push("임베드: 기존 항목보다 이른 날짜라 날짜순 위치에 삽입합니다.");
   if (step2.skipped) warnings.push("임베드: 이미 있어 건너뜁니다.");
 
+  const insertions: SyncInsertion[] = [];
+  if (!step1.skipped) {
+    insertions.push({
+      heading: headings.memberVisitLog,
+      lines: [logLine],
+      sectionCreated: step1.sectionCreated,
+    });
+  }
+  if (!step2.skipped) {
+    insertions.push({
+      heading: headings.memberEmbeds,
+      lines: embedBlock,
+      sectionCreated: step2.sectionCreated,
+    });
+  }
+
   return {
     newContent: step2.newContent,
     logLine,
     embedBlock,
     warnings,
     nothingToDo: step1.skipped && step2.skipped,
+    insertions,
   };
 }

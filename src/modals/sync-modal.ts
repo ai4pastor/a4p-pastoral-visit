@@ -1,8 +1,9 @@
 import { Modal, Setting } from "obsidian";
 import type PastoralVisitPlugin from "../main";
 import { VISIT_STATUS } from "../constants";
-import { buildEmbedBlock, buildLogLine, planSync } from "../sync-core";
+import { planSync } from "../sync-core";
 import { SyncContext, executeSync } from "../sync";
+import { callout, renderDiff } from "../ui";
 
 /**
  * 반영 미리보기 모달 — 성도 노트에 추가될 내용을 승인 전에 보여준다 (dry-run 원칙).
@@ -83,29 +84,24 @@ export class SyncModal extends Modal {
       this.ctx.anchors,
     );
 
-    el.createEl("p", { text: "성도 노트에 추가될 내용:", cls: "a4p-pv-preview-label" });
-
-    const logBox = el.createEl("pre", { cls: "a4p-pv-preview-box" });
-    logBox.setText(buildLogLine(this.ctx.visitBasename, this.summary));
-
-    const embedBox = el.createEl("pre", { cls: "a4p-pv-preview-box" });
-    embedBox.setText(
-      buildEmbedBlock(
-        this.ctx.visitBasename,
-        this.ctx.날짜,
-        this.ctx.심방유형,
-        this.ctx.anchors,
-      ).join("\n"),
-    );
+    if (plan.insertions.length > 0) {
+      el.createEl("p", { text: "성도 노트에 추가될 내용:", cls: "a4p-pv-preview-label" });
+      renderDiff(
+        el,
+        this.ctx.memberFile.name,
+        plan.insertions.map((ins) => ({
+          context: ins.sectionCreated ? `${ins.heading} (새 섹션)` : ins.heading,
+          lines: ins.lines,
+        })),
+        `${plan.insertions.length}곳에 추가`,
+      );
+    }
 
     for (const warning of plan.warnings) {
-      el.createEl("p", { text: `⚠ ${warning}`, cls: "a4p-pv-preview-warn" });
+      callout(el, "warn", warning);
     }
     if (plan.nothingToDo) {
-      el.createEl("p", {
-        text: "본문은 이미 반영돼 있습니다. [반영]을 누르면 상태만 갱신합니다.",
-        cls: "a4p-pv-preview-warn",
-      });
+      callout(el, "info", "본문은 이미 반영돼 있습니다. [반영]을 누르면 상태만 갱신합니다.");
     }
   }
 

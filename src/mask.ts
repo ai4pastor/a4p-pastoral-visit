@@ -14,3 +14,12 @@ export function maskPhone(phone: string): string {
 export function maskBirth(birth: string): string {
   return birth.replace(/(\d{2})(\d{2})-(\d{2})-(\d{2})/g, "$1**-**-**");
 }
+
+/**
+ * 민감정보 표시 단일 관문 — 뷰·모달 공용 (직접 setText 금지 규율).
+ * maskOn이 꺼져 있을 때만 원문을 반환한다.
+ */
+export function renderSensitive(value: string, kind: "phone" | "birth", maskOn: boolean): string {
+  if (!maskOn) return value;
+  return kind === "birth" ? maskBirth(value) : maskPhone(value);
+}

@@ -45,6 +45,8 @@ export interface PastoralVisitSettings {
   headings: HeadingConfig;
   /** 헤딩 변경 감지 경고 */
   warnHeadingChanges: boolean;
+  /** 대시보드에서 접어둔 카드 키 목록 (개인화) */
+  collapsedCards: string[];
 }
 
 export const DEFAULT_SETTINGS: PastoralVisitSettings = {
@@ -64,6 +66,7 @@ export const DEFAULT_SETTINGS: PastoralVisitSettings = {
   prayerDigestWeeks: 4,
   headings: { ...DEFAULT_HEADINGS },
   warnHeadingChanges: true,
+  collapsedCards: [],
 };
 
 export class PastoralVisitSettingTab extends PluginSettingTab {

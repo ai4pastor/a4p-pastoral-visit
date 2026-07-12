@@ -1,13 +1,19 @@
 # RESUME — 세션 이어가기
 
-> 마지막 갱신: 2026-07-12 (v0.1 개발 완료 + GitHub 업로드 시점)
+> 마지막 갱신: 2026-07-12 (v0.2 개발 완료 — 디자인 고급화 + 성도 탭·브리핑 탭)
 
 ## 현재 상태 (한눈에)
 
-- **v0.1 기능 완성** — 빌드·테스트(104건)·실볼트 E2E 전부 통과
-- GitHub: `ai4pastor/a4p-pastoral-visit` (**private**, main 브랜치) — 푸시 완료
-- dev 볼트(`~/obsidian_dev_vault`)에 최신 빌드 배포됨 (플러그인 리로드 필요할 수 있음)
+- **v0.2 기능 완성** — 빌드·테스트(131건) 통과. manifest/package/versions 0.2.0으로 상향
+- GitHub: `ai4pastor/a4p-pastoral-visit` (**private**, main 브랜치)
 - **아직 태그/릴리스 없음** — BRAT 배포하려면 태그 푸시 필요 (release.yml이 자동 처리)
+- v0.2에서 추가된 것:
+  - **디자인 고급화** — UI 크롬 이모지 → Lucide 전면 전환(`safeIcon` 폴백), styles.css 간격/폰트 토큰화(`--size-4-*`, `--font-semibold`), 카운트 뱃지(pill, neutral/warn/accent), 공용 빈 상태(`renderEmpty`, CTA 지원), 카드 접기(`<details>` + `collapsedCards` 설정 저장), 포커스 링·hover 트랜지션·reduced-motion, 행 키보드 접근(tabIndex+Enter/Space)
+  - **미리보기 diff화** — `SyncPlan.insertions` 필드 추가(계약 유지, 필드만), sync/prayer-digest 모달이 `renderDiff`(파일 헤더 + 섹션 컨텍스트 + `+` 초록 라인)와 `callout` 사용
+  - **성도 탭** — 검색(이름/구역/직분, NFC) + 목록 + 노트 열기/일지 작성 버튼, `filterMembers` 순수 함수
+  - **심방 브리핑** — 행 클릭/커맨드("심방 브리핑 열기")/성도 노트 우클릭 3진입점 → 헤더(마스킹 경유 연락처·생년월일·나이) + 마지막 심방 + 미완 후속조치(visitPath 집합 필터, 동명이인 안전) + 최근 기도제목(최근 일지 2건) + 가족(`가족관계` wikilink 해석, 가족 브리핑 이동) + 심방 이력 타임라인 + 일지 작성 CTA
+  - **버그 수정** — `renderSensitive`가 phone에 `maskPhone` 미적용이던 것 수정 (mask.ts로 승격, 뷰·모달 공유)
+- 신규 모듈: `src/ui.ts`(safeIcon/badge/renderEmpty/callout/renderDiff), `src/briefing-core.ts`(순수), `src/briefing.ts`(수집기) + `tests/briefing-core.test.ts`
 
 ## 구현된 기능 (커밋 순)
 
@@ -24,15 +30,16 @@
 - **순수 로직 / IO 분리**: `*-core.ts`·`note-builders.ts`·`utils.ts`·`word-config.ts`·`mask.ts`는 obsidian import 금지 → vitest 직접 테스트. IO는 `sync.ts`·`actions.ts`·`prayers.ts`·`visit-note.ts`·`member-note.ts` 등
 - **헤딩 상수**: `src/constants.ts`의 `DEFAULT_HEADINGS`가 기본값, 실사용은 `settings.headings` (커스터마이즈 가능). 섹션 탐지는 `findSectionRange`(정확→느슨 2단계)
 - **비파괴 규율**: append-only, 명시 클릭 단일 라인 변경만 예외, dry-run 미리보기 (CLAUDE.md 참조)
-- 테스트: `npm test` (104건) + `node scripts/e2e-check.mjs` (실볼트 읽기 전용 골든 검증)
+- 테스트: `npm test` (131건) + `node scripts/e2e-check.mjs` (실볼트 읽기 전용 골든 검증)
 - dev 볼트 배포: `npm run build && cp main.js manifest.json styles.css ~/obsidian_dev_vault/.obsidian/plugins/a4p-pastoral-visit/`
 
 ## 다음 할 일 (우선순위)
 
-1. **dev 볼트에서 사용자 수동 E2E** — 성도 등록→일지 작성→반영→패널 3탭·기도 모음·WORD 분석 버튼 실제 확인 (아직 사용자가 직접 안 해봄)
-2. **v0.1.0 태그 푸시 → 첫 릴리스** — `git tag 0.1.0 && git push origin 0.1.0` (release.yml이 자동 빌드·릴리스) → BRAT 설치 테스트
-3. v0.2 후보 (기획서 7장): 심방 브리핑 탭, 성도 탭 검색, 기존 일지 소급 반영 마이그레이션(dry-run)
-4. 강의 자료화: `docs/03-확장아이디어.md`의 90분 실습 커리큘럼 참조
+1. **dev 볼트에서 사용자 수동 E2E** — 탭 4개 전환, 카드 접기 상태 유지(재시작 후), 성도 검색, 브리핑 진입 3경로(행 클릭/커맨드/우클릭), 마스킹 on/off 시 브리핑 연락처, diff 미리보기 → 반영 멱등, 키보드 탐색(Tab/Enter)
+2. **테마 매트릭스 확인** — 기본 라이트/다크 + Minimal, 액센트 2종에서 뱃지 warn 틴트·diff 초록 틴트·칩 대비 확인 (color-mix 틴트가 다크에서 안 보이면 `.theme-dark` 스코프로 16~18% 상향)
+3. **v0.2.0 태그 푸시 → 첫 릴리스** — `git tag 0.2.0 && git push origin 0.2.0` (release.yml이 자동 빌드·릴리스) → BRAT 설치 테스트
+4. v0.3 후보: 연락 템플릿(#3), 소급 반영 마이그레이션(#8), 월간 통계 리포트(#4) — `docs/03-확장아이디어.md`
+5. 강의 자료화: `docs/03-확장아이디어.md`의 90분 실습 커리큘럼 참조
 
 ## 주의사항
 

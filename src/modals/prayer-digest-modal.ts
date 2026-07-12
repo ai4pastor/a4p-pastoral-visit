@@ -1,6 +1,7 @@
 import { Modal, Setting } from "obsidian";
 import type PastoralVisitPlugin from "../main";
 import { DigestPlan, createPrayerDigest, planPrayerDigest } from "../prayer-digest";
+import { callout, renderDiff } from "../ui";
 
 /**
  * 주간 기도제목 모음 — 미리보기 후 승인 생성 (dry-run 원칙).
@@ -77,14 +78,11 @@ export class PrayerDigestModal extends Modal {
       cls: "a4p-pv-preview-label",
     });
     if (this.plan.totalCount === 0) {
-      el.createEl("p", {
-        text: "⚠ 수집된 기도제목이 없습니다. 범위를 늘려 보세요.",
-        cls: "a4p-pv-preview-warn",
-      });
+      callout(el, "warn", "수집된 기도제목이 없습니다. 범위를 늘려 보세요.");
     }
-    const box = el.createEl("pre", { cls: "a4p-pv-preview-box a4p-pv-preview-scroll" });
-    // 프론트매터 제외한 본문만 미리보기
-    box.setText(this.plan.content.replace(/^---[\s\S]*?---\n+/, ""));
+    // 프론트매터 제외한 본문만 미리보기 — 새 파일이므로 전체가 추가분
+    const bodyLines = this.plan.content.replace(/^---[\s\S]*?---\n+/, "").split("\n");
+    renderDiff(el, `${this.plan.fileName}.md`, [{ lines: bodyLines }], "새 파일");
   }
 
   private async submit(): Promise<void> {

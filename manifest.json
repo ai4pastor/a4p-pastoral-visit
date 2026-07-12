@@ -1,7 +1,7 @@
 {
   "id": "a4p-pastoral-visit",
   "name": "A4P Pastoral Visit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.5.0",
   "description": "성도 명부와 심방 기록을 하나의 흐름으로 관리합니다. 심방일지 생성, 성도 노트 자동 반영, 후속조치 추적.",
   "author": "abadcsh",

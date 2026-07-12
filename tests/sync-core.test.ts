@@ -175,6 +175,26 @@ describe("planSync — 빈 템플릿 (placeholder 보존)", () => {
   });
 });
 
+describe("planSync — insertions (미리보기 diff용)", () => {
+  it("정상 반영 시 두 섹션 삽입이 순서대로 담김", () => {
+    const plan = planSync(MEMBER_WITH_HISTORY, "260308_심방일지_홍길동", "2026-03-08", "정기심방", "요약");
+    expect(plan.insertions.length).toBe(2);
+    expect(plan.insertions[0].heading).toBe("## 📝 심방 기록");
+    expect(plan.insertions[0].lines).toEqual([buildLogLine("260308_심방일지_홍길동", "요약")]);
+    expect(plan.insertions[0].sectionCreated).toBe(false);
+    expect(plan.insertions[1].heading).toBe("## 📌 중요 심방 내용 (임베드)");
+    expect(plan.insertions[1].lines[0]).toBe("### 2026-03-08 정기심방");
+  });
+  it("이미 반영된 일지는 insertions 비어 있음", () => {
+    const plan = planSync(MEMBER_WITH_HISTORY, "260125_심방일지_홍길동", "2026-01-25", "정기심방", "요약");
+    expect(plan.insertions).toEqual([]);
+  });
+  it("섹션 신설 시 sectionCreated 표시", () => {
+    const plan = planSync(MEMBER_NO_SECTIONS, "260711_심방일지_박자유", "2026-07-11", "정기심방", "요약");
+    expect(plan.insertions.every((i) => i.sectionCreated)).toBe(true);
+  });
+});
+
 describe("planSync — 섹션 없는 비표준 노트", () => {
   const plan = planSync(MEMBER_NO_SECTIONS, "260711_심방일지_박자유", "2026-07-11", "정기심방", "요약");
   it("문서 말미에 섹션 신설 + 경고", () => {

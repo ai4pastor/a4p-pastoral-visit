@@ -1,4 +1,4 @@
-import { MarkdownView, Notice, Plugin } from "obsidian";
+import { MarkdownView, Notice, Plugin, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, PastoralVisitSettings, PastoralVisitSettingTab } from "./settings";
 import { MemberIndex } from "./member-index";
 import { MemberModal } from "./modals/member-modal";
@@ -82,6 +82,33 @@ export default class PastoralVisitPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: "member-briefing",
+      name: "심방 브리핑 열기",
+      checkCallback: (checking) => {
+        const path = this.activeMemberPath();
+        if (!path) return false;
+        if (checking) return true;
+        void this.openBriefing(path);
+        return true;
+      },
+    });
+
+    // 성도 노트 우클릭 → 브리핑
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu, file) => {
+        if (!(file instanceof TFile)) return;
+        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        if (fm?.type !== NOTE_TYPE.member) return;
+        menu.addItem((item) =>
+          item
+            .setTitle("심방 브리핑 열기")
+            .setIcon("heart-handshake")
+            .onClick(() => void this.openBriefing(file.path)),
+        );
+      }),
+    );
+
+    this.addCommand({
       id: "sync-visit",
       name: "심방일지 반영 (성도 노트에)",
       checkCallback: (checking) => {
@@ -134,6 +161,13 @@ export default class PastoralVisitPlugin extends Plugin {
     void workspace.revealLeaf(leaf);
   }
 
+  /** 사이드 패널을 열고 특정 성도의 심방 브리핑 표시 */
+  async openBriefing(memberPath: string): Promise<void> {
+    await this.activateView();
+    const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_PASTORAL_VISIT)[0];
+    if (leaf?.view instanceof PastoralVisitView) leaf.view.showBriefing(memberPath);
+  }
+
   /** 활성 노트가 교인노트면 그 경로 (심방일지 모달 프리필용) */
   activeMemberPath(): string | null {
     const file = this.app.workspace.getActiveViewOfType(MarkdownView)?.file;
@@ -150,6 +184,7 @@ export default class PastoralVisitPlugin extends Plugin {
       ...saved,
       visitTypes: saved.visitTypes ?? [...DEFAULT_SETTINGS.visitTypes],
       headings: { ...DEFAULT_SETTINGS.headings, ...(saved.headings ?? {}) },
+      collapsedCards: saved.collapsedCards ?? [],
     };
   }
 
