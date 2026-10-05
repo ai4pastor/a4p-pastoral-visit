@@ -1,11 +1,11 @@
 # RESUME — 세션 이어가기
 
-> 마지막 갱신: 2026-07-12 (v0.2 개발 완료 — 디자인 고급화 + 성도 탭·브리핑 탭)
+> 마지막 갱신: 2026-10-05 (시연 데이터 최신화 생성기 + 수강생용 변환 스킬 pastor-visit-import 1.7.0)
 
 ## 현재 상태 (한눈에)
 
 - **v0.2 기능 완성 + 첫 릴리스 발행** — 빌드·테스트(131건) 통과
-- GitHub: `ai4pastor/a4p-pastoral-visit` (**private**, main 브랜치)
+- GitHub: `ai4pastor/a4p-pastoral-visit` (**public**, main 브랜치 — BRAT 설치 토큰 불필요)
 - **릴리스 0.2.0 발행됨** (2026-07-12, release.yml 자동 빌드 — main.js/manifest.json/styles.css 첨부) → BRAT 설치 테스트 가능
 - v0.2에서 추가된 것:
   - **디자인 고급화** — UI 크롬 이모지 → Lucide 전면 전환(`safeIcon` 폴백), styles.css 간격/폰트 토큰화(`--size-4-*`, `--font-semibold`), 카운트 뱃지(pill, neutral/warn/accent), 공용 빈 상태(`renderEmpty`, CTA 지원), 카드 접기(`<details>` + `collapsedCards` 설정 저장), 포커스 링·hover 트랜지션·reduced-motion, 행 키보드 접근(tabIndex+Enter/Space)
@@ -14,6 +14,14 @@
   - **심방 브리핑** — 행 클릭/커맨드("심방 브리핑 열기")/성도 노트 우클릭 3진입점 → 헤더(마스킹 경유 연락처·생년월일·나이) + 마지막 심방 + 미완 후속조치(visitPath 집합 필터, 동명이인 안전) + 최근 기도제목(최근 일지 2건) + 가족(`가족관계` wikilink 해석, 가족 브리핑 이동) + 심방 이력 타임라인 + 일지 작성 CTA
   - **버그 수정** — `renderSensitive`가 phone에 `maskPhone` 미적용이던 것 수정 (mask.ts로 승격, 뷰·모달 공유)
 - 신규 모듈: `src/ui.ts`(safeIcon/badge/renderEmpty/callout/renderDiff), `src/briefing-core.ts`(순수), `src/briefing.ts`(수집기) + `tests/briefing-core.test.ts`
+
+## 2026-10-05 세션 — 시연 데이터 최신화 + 수강생 변환 스킬
+
+- **`scripts/demo-data/` 생성기** (커밋 `e0cb92a`): seed(53명 프론트매터) ⊕ `members.overrides.json`(앵커 상대 생일·등록일·위생 규칙) ⊕ 일지 조각(history 13 + new 15, 서사 5섹션만 집필) → 성도 노트는 `planSync` 로 렌더(플러그인 출력과 바이트 호환). `cli.mjs generate --anchor 2026-10-05 --vault <460. 성도> [--apply]`, `verify`. 사용법 `scripts/demo-data/README.md`.
+- **실볼트 적용 완료** (앵커 2026-10-05): 성도 53·일지 28(반영 26 + 미반영 2 = 오재민 10/3·송현주 10/4 라이브 반영 시연용). 기대 대시보드 — 후속조치 미완 18(최상단 황인수 198일) / 심방 필요 11 / 장기 미심방 4 / 생일 4 / 새등록 심방 전 3 / 미반영 2 / 기도제목 100(✅12). 백업 `.backup/460. 성도_real_20261005T132026.tar.gz`. `성도 테스트/` → `469. 성도 실습(테스트)/` 이동(이중 색인 해소). `성도 관리.base` 잡컬럼 2개 제거. dev 볼트도 동일 상태.
+- **수강생용 스킬 `pastor-visit-import`** — `~/Projects/pastor-skills` v1.7.0 (dist 미러 `ai4pastor/pastor-skills-dist`). 기존 심방 노트를 비파괴로 플러그인 형식으로 변환(audit→plan→apply→backfill→verify). 플러그인 `src/sync-core.ts` 의 파이썬 포트가 골든(`tests/pastor-visit-import/golden_plan_sync.json`)과 바이트 동일 — **sync-core 를 바꾸면 그 골든도 다시 뽑아야 한다**(`scripts/.sync-core.bundle.mjs` 로 esbuild). 설계 `docs/pastor-visit-import/DESIGN.md`, 시연 대본 `DEMO.md`.
+- 강의 시연 순서 제안: 실볼트 대시보드(카드 8개) → 브리핑(이미영/황인수) → 미반영 2건 중 1건 라이브 반영(오재민: 상태 필요→완료) → 수강생 볼트 변환 시연은 `python3 tests/pastor-visit-import/make_fixtures.py <폴더>` 로 합성 볼트 → DEMO.md 7분.
+- 다음 할 일: ① 강의 후 `session-log note` ② 플러그인 v0.3 후보에 "소급 반영"은 스킬로 해결됐으므로 `docs/03-확장아이디어.md` #8 상태 갱신 ③ 재앵커(`--shift`)는 미구현 — 다음 강의 때 `--anchor` 만 바꿔 돌리면 offset 일지가 이동하고 history 13건은 고정(README 참고).
 
 ## 구현된 기능 (커밋 순)
 
@@ -37,7 +45,7 @@
 
 1. **dev 볼트에서 사용자 수동 E2E** — 탭 4개 전환, 카드 접기 상태 유지(재시작 후), 성도 검색, 브리핑 진입 3경로(행 클릭/커맨드/우클릭), 마스킹 on/off 시 브리핑 연락처, diff 미리보기 → 반영 멱등, 키보드 탐색(Tab/Enter)
 2. **테마 매트릭스 확인** — 기본 라이트/다크 + Minimal, 액센트 2종에서 뱃지 warn 틴트·diff 초록 틴트·칩 대비 확인 (color-mix 틴트가 다크에서 안 보이면 `.theme-dark` 스코프로 16~18% 상향)
-3. **BRAT 설치 테스트** — 릴리스 0.2.0은 발행됨. private 리포라 BRAT에서 GitHub 토큰 설정 필요할 수 있음
+3. **BRAT 설치 테스트** — 릴리스 0.2.0 발행됨, 리포 public
 4. v0.3 후보: 연락 템플릿(#3), 소급 반영 마이그레이션(#8), 월간 통계 리포트(#4) — `docs/03-확장아이디어.md`
 5. 강의 자료화: `docs/03-확장아이디어.md`의 90분 실습 커리큘럼 참조
 
