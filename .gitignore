@@ -4,3 +4,5 @@ index.json
 .DS_Store
 scripts/.sync-core.bundle.mjs
 main.js
+.backup/
+scripts/demo-data/.cli.bundle.mjs

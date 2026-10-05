@@ -39,7 +39,8 @@ npm install
 npm run dev     # watch 빌드
 npm run build   # 타입체크 + production 빌드
 npm test        # vitest (순수 로직 단위 테스트)
-node scripts/e2e-check.mjs  # 실제 볼트 데이터 대상 반영 로직 검증 (읽기 전용)
+node scripts/e2e-check.mjs  # dev 볼트 데이터 대상 반영 로직 검증 (읽기 전용)
+node scripts/demo-data/cli.mjs generate --vault "<460. 성도>" --anchor YYYY-MM-DD   # 시연 데이터 재생성 dry-run (scripts/demo-data/README.md)
 ```
 
 ## 라이선스
