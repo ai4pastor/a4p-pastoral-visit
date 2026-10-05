@@ -21,7 +21,8 @@
 - **실볼트 적용 완료** (앵커 2026-10-05): 성도 53·일지 28(반영 26 + 미반영 2 = 오재민 10/3·송현주 10/4 라이브 반영 시연용). 기대 대시보드 — 후속조치 미완 18(최상단 황인수 198일) / 심방 필요 11 / 장기 미심방 4 / 생일 4 / 새등록 심방 전 3 / 미반영 2 / 기도제목 100(✅12). 백업 `.backup/460. 성도_real_20261005T132026.tar.gz`. `성도 테스트/` → `469. 성도 실습(테스트)/` 이동(이중 색인 해소). `성도 관리.base` 잡컬럼 2개 제거. dev 볼트도 동일 상태.
 - **수강생용 스킬 `pastor-visit-import`** — `~/Projects/pastor-skills` v1.7.0 (dist 미러 `ai4pastor/pastor-skills-dist`). 기존 심방 노트를 비파괴로 플러그인 형식으로 변환(audit→plan→apply→backfill→verify). 플러그인 `src/sync-core.ts` 의 파이썬 포트가 골든(`tests/pastor-visit-import/golden_plan_sync.json`)과 바이트 동일 — **sync-core 를 바꾸면 그 골든도 다시 뽑아야 한다**(`scripts/.sync-core.bundle.mjs` 로 esbuild). 설계 `docs/pastor-visit-import/DESIGN.md`, 시연 대본 `DEMO.md`.
 - 강의 시연 순서 제안: 실볼트 대시보드(카드 8개) → 브리핑(이미영/황인수) → 미반영 2건 중 1건 라이브 반영(오재민: 상태 필요→완료) → 수강생 볼트 변환 시연은 `python3 tests/pastor-visit-import/make_fixtures.py <폴더>` 로 합성 볼트 → DEMO.md 7분.
-- 다음 할 일: ① 강의 후 `session-log note` ② 플러그인 v0.3 후보에 "소급 반영"은 스킬로 해결됐으므로 `docs/03-확장아이디어.md` #8 상태 갱신 ③ 재앵커(`--shift`)는 미구현 — 다음 강의 때 `--anchor` 만 바꿔 돌리면 offset 일지가 이동하고 history 13건은 고정(README 참고).
+- **다음 세션 시작점** (2026-10-05 세션 종료 시점): 세 리포 모두 푸시·작업트리 clean. 강의 시연 자료 완비(실볼트 데이터 + `pastor-visit-import` 1.7.0 + `docs/pastor-visit-import/DEMO.md`).
+  남은 후보 ① 강의 후 수강생 피드백·실제 윈도우 PC 결과 반영(필요 시 pastor-skills 1.7.1) ② 재앵커 편의: 생성기 `--shift-days`(미구현, `--anchor` 변경으로 대체 가능) ③ v0.3 후보(연락 템플릿 #3·월간 통계 #4) ④ 시드 연락처 더미와 볼트 번호가 다름 — 다음 `generate --apply` 때 통일됨(의도).
 
 ## 구현된 기능 (커밋 순)
 
