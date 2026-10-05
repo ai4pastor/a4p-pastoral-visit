@@ -1,0 +1,3 @@
+# github-privacy-audit 오탐 화이트리스트 — 시연·테스트용 명백한 더미 전화번호(010-0000-일련번호, 테스트 픽스처)
+scripts/demo-data/seed/members.json
+tests/visit-note.test.ts

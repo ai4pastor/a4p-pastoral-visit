@@ -41,4 +41,4 @@ node scripts/demo-data/cli.mjs verify --vault "…/460. 성도" --anchor 2026-10
 
 ## 연락처 더미
 
-`seed/members.json` 의 연락처는 공개 리포용 더미(`010-0000-0001`~`0053`)다. 볼트에는 이전 가짜 번호가 남아 있어 다음 `generate` dry-run 에서 연락처 줄 차이가 보이는 것이 정상이며, `--apply` 하면 더미로 통일된다.
+`seed/members.json` 의 연락처는 공개 리포용 더미(010-0000- 뒤에 일련번호 0001~0053)다. 볼트에는 이전 가짜 번호가 남아 있어 다음 `generate` dry-run 에서 연락처 줄 차이가 보이는 것이 정상이며, `--apply` 하면 더미로 통일된다.
